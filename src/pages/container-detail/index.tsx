@@ -7,23 +7,26 @@ import TempGauge from '@/components/TempGauge';
 import StageTimeline from '@/components/StageTimeline';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDurationHours } from '@/utils/temperature';
+import { useUserStore } from '@/store/userStore';
 import styles from './index.module.scss';
 
 const ContainerDetailPage: React.FC = () => {
   const router = useRouter();
   const id = router.params.id || '';
+  const { profile } = useUserStore();
   const [container, setContainer] = useState<Container | null>(null);
   const [selectedStage, setSelectedStage] = useState<number>(-1);
 
   useEffect(() => {
-    const c = getContainerByNo(id);
+    const c = getContainerByNo(id, profile.customerId);
     if (c) {
       setContainer(c);
       console.log('[ContainerDetail] loaded:', c.containerNo);
     } else {
-      console.error('[ContainerDetail] not found:', id);
+      setContainer(null);
+      console.warn('[ContainerDetail] not found or no permission:', id);
     }
-  }, [id]);
+  }, [id, profile.customerId]);
 
   const activeStageIdx = useMemo(() => {
       if (!container) return -1;

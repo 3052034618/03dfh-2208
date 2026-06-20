@@ -27,10 +27,19 @@ const TemperaturePage: React.FC = () => {
   const [pickerKeyword, setPickerKeyword] = useState('');
 
   useEffect(() => {
-    if (!selectedId && allContainers.length > 0) {
-      setSelectedId(allContainers[0].id);
+    if (allContainers.length > 0) {
+      const stillExists = allContainers.find(c => c.id === selectedId);
+      if (!stillExists) {
+        setSelectedId(allContainers[0].id);
+        setSelectedStage(-1);
+        setPickerKeyword('');
+      }
+    } else if (selectedId) {
+      setSelectedId('');
+      setSelectedStage(-1);
+      setPickerKeyword('');
     }
-  }, [allContainers, selectedId]);
+  }, [profile.customerId, allContainers]);
 
   const selectedContainer = useMemo<Container | undefined>(() => {
     return allContainers.find(c => c.id === selectedId);

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import { getReceiptById } from '@/data/receipts';
+import { getContainerByNo } from '@/data/containers';
+import { useUserStore } from '@/store/userStore';
 import type { ReceiptRecord } from '@/types/container';
 import classnames from 'classnames';
 import styles from './index.module.scss';
@@ -9,22 +11,34 @@ import styles from './index.module.scss';
 const ReceiptDetailPage: React.FC = () => {
   const router = useRouter();
   const id = router.params.id || '';
+  const { profile } = useUserStore();
   const [receipt, setReceipt] = useState<ReceiptRecord | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean>(true);
 
   useEffect(() => {
     const r = getReceiptById(id);
-    if (r) {
-      setReceipt(r);
-      console.log('[ReceiptDetail] loaded:', r.id);
-    } else {
+    if (!r) {
+      setReceipt(null);
+      setHasPermission(true);
       console.error('[ReceiptDetail] not found:', id);
+      return;
     }
-  }, [id]);
+    const container = getContainerByNo(r.containerNo, profile.customerId);
+    if (!container) {
+      setReceipt(r);
+      setHasPermission(false);
+      console.warn('[ReceiptDetail] no permission for receipt:', id);
+      return;
+    }
+    setReceipt(r);
+    setHasPermission(true);
+    console.log('[ReceiptDetail] loaded:', r.id);
+  }, [id, profile.customerId]);
 
   const shareText = useMemo(() => {
-    if (!receipt) return '';
+    if (!receipt || !hasPermission) return '';
     return `【冷链签收单】\n签收编号：${receipt.id}\n箱号：${receipt.containerNo}\n货物：${receipt.goodsName}\n签收结果：${receipt.statusText}\n到货温度：${receipt.arrivalTemp}℃\n签收时间：${receipt.receiptTime}\n签收人：${receipt.receiptOperator}\n备注：${receipt.remark || '无'}`;
-  }, [receipt]);
+  }, [receipt, hasPermission]);
 
   if (!receipt) {
     return (
@@ -32,6 +46,30 @@ const ReceiptDetailPage: React.FC = () => {
         <View style={{ padding: '200rpx 0', textAlign: 'center' }}>
           <Text style={{ fontSize: '100rpx', opacity: 0.3 }}>📋</Text>
           <Text style={{ marginTop: '32rpx', fontSize: '28rpx', color: '#86909C' }}>签收记录不存在</Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <ScrollView scrollY className={styles.page}>
+        <View className={styles.receipt}>
+          <View className={styles.receiptHeader}>
+            <View className={styles.headerLogo}>❄️</View>
+            <View className={styles.headerTitle}>冷 链 签 收 单</View>
+            <View className={styles.headerSub}>COLD CHAIN DELIVERY RECEIPT</View>
+            <View className={styles.receiptId}>签收编号 {receipt.id}</View>
+          </View>
+        </View>
+        <View style={{ padding: '120rpx 64rpx', textAlign: 'center' }}>
+          <Text style={{ fontSize: '120rpx', opacity: 0.25 }}>🔒</Text>
+          <Text style={{ display: 'block', marginTop: '48rpx', fontSize: '32rpx', fontWeight: 600, color: '#4E5969' }}>
+            无权限查看该签收单
+          </Text>
+          <Text style={{ display: 'block', marginTop: '20rpx', fontSize: '26rpx', color: '#86909C', lineHeight: 1.6 }}>
+            该签收单所属客户与当前登录账户不匹配{'\n'}如需查看请联系对应客户或切换登录身份
+          </Text>
         </View>
       </ScrollView>
     );
