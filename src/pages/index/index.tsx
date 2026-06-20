@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Input, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import ContainerCard from '@/components/ContainerCard';
-import { searchContainers, getContainersByCustomer } from '@/data/containers';
-import type { Container, ContainerStatus } from '@/types/container';
+import { searchContainers, getContainersByCustomer, filterByTempStatus } from '@/data/containers';
+import type { Container, ContainerStatus, TempStatus } from '@/types/container';
 import { useUserStore } from '@/store/userStore';
 import styles from './index.module.scss';
 import classnames from 'classnames';
@@ -16,10 +16,18 @@ const filterOptions: { key: string; label: string; status?: ContainerStatus }[] 
   { key: 'arrived', label: '已到仓', status: 'arrived' }
 ];
 
+const tempFilterOptions: { key: TempStatus | 'all'; label: string; dot: string; }[] = [
+  { key: 'all', label: '全部温度', dot: '#86909C' },
+  { key: 'normal', label: '温度正常', dot: '#00B42A' },
+  { key: 'warn', label: '温度预警', dot: '#FF7D00' },
+  { key: 'danger', label: '温度超限', dot: '#F53F3F' },
+];
+
 const IndexPage: React.FC = () => {
   const { profile } = useUserStore();
   const [keyword, setKeyword] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [activeTempFilter, setActiveTempFilter] = useState<TempStatus | 'all'>('all');
   const [containers, setContainers] = useState<Container[]>([]);
 
   useEffect(() => {
@@ -76,10 +84,18 @@ const IndexPage: React.FC = () => {
     setActiveFilter(key);
   };
 
-  const filteredContainers = useMemo(() => {
+  const handleTempFilter = (key: TempStatus | 'all') => {
+    setActiveTempFilter(key);
+  };
+
+  const statusFiltered = useMemo(() => {
     if (activeFilter === 'all') return containers;
     return containers.filter(c => c.status === activeFilter);
   }, [containers, activeFilter]);
+
+  const filteredContainers = useMemo(() => {
+    return filterByTempStatus(statusFiltered, activeTempFilter);
+  }, [statusFiltered, activeTempFilter]);
 
   const overviewStats = useMemo(() => {
     const all = getContainersByCustomer(profile.customerId);
@@ -178,6 +194,19 @@ const IndexPage: React.FC = () => {
               className={classnames(styles.filterItem, activeFilter === opt.key && styles.active)}
               onClick={() => handleFilter(opt.key)}
             >
+              <Text>{opt.label}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        <ScrollView scrollX className={styles.filterBar} showScrollbar={false}>
+          {tempFilterOptions.map(opt => (
+            <View
+              key={opt.key}
+              className={classnames(styles.filterItem, styles.tempFilterItem, activeTempFilter === opt.key && styles.tempActive)}
+              onClick={() => handleTempFilter(opt.key)}
+            >
+              <View className={styles.tempDot} style={{ background: opt.dot }} />
               <Text>{opt.label}</Text>
             </View>
           ))}

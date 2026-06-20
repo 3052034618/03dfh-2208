@@ -94,6 +94,68 @@
   border-radius: $radius-round;
 }
 
+.anomalySummaryCard {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+  border-left: 6rpx solid $color-warning;
+}
+
+.anomalySummaryIcon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  flex-shrink: 0;
+  background: rgba(255, 125, 0, 0.1);
+}
+
+.anomalySummaryContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 0;
+}
+
+.anomalySummaryTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.anomalySummaryDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  line-height: 1.5;
+}
+
+.anomalySummaryBadge {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: 22rpx;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+
+  &.warn {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.danger {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+}
+
 .quickActions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -67,6 +67,11 @@
     color: $color-warning;
   }
 
+  &.inspection_done {
+    background: rgba(114, 46, 209, 0.1);
+    color: #722ED1;
+  }
+
   &.pending {
     background: rgba(14, 124, 134, 0.1);
     color: $color-primary-dark;

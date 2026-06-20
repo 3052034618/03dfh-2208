@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Input, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { getContainersByCustomer } from '@/data/containers';
-import type { Container } from '@/types/container';
+import { getContainersByCustomer, detectAnomalies } from '@/data/containers';
+import type { Container, TemperatureAnomaly } from '@/types/container';
 import TempChart from '@/components/TempChart';
 import TempGauge from '@/components/TempGauge';
 import StatusBadge from '@/components/StatusBadge';
@@ -25,6 +25,8 @@ const TemperaturePage: React.FC = () => {
   const [selectedStage, setSelectedStage] = useState<number>(-1);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerKeyword, setPickerKeyword] = useState('');
+  const [showAnomalyDetail, setShowAnomalyDetail] = useState(false);
+  const [selectedAnomaly, setSelectedAnomaly] = useState<TemperatureAnomaly | null>(null);
 
   useEffect(() => {
     if (allContainers.length > 0) {
@@ -60,6 +62,16 @@ const TemperaturePage: React.FC = () => {
       anomalyCount
     };
   }, [selectedContainer]);
+
+  const anomalies = useMemo(() => {
+    if (!selectedContainer) return [];
+    return detectAnomalies(selectedContainer);
+  }, [selectedContainer]);
+
+  const handleAnomalyClick = (anomaly: TemperatureAnomaly) => {
+    setSelectedAnomaly(anomaly);
+    setShowAnomalyDetail(true);
+  };
 
   const filteredPickerList = useMemo(() => {
     if (!pickerKeyword.trim()) return allContainers;
@@ -158,6 +170,38 @@ const TemperaturePage: React.FC = () => {
         />
       </View>
 
+      {anomalies.length > 0 && (
+        <View className={styles.anomalySection}>
+          <Text className={styles.anomalyTitle}>
+            <Text style={{ marginRight: '8rpx' }}>⚠️</Text>
+            温度异常事件（共 {anomalies.length} 次）
+          </Text>
+          {anomalies.map((anomaly, idx) => (
+            <View
+              key={anomaly.id}
+              className={classnames(styles.anomalyItem, styles[anomaly.severity])}
+              onClick={() => handleAnomalyClick(anomaly)}
+            >
+              <View className={styles.anomalyLeft}>
+                <View className={styles.anomalySeverityDot} />
+                <View>
+                  <Text className={styles.anomalyStage}>
+                    {anomaly.stageName} · {anomaly.direction === 'overheat' ? '温度偏高' : '温度偏低'}
+                  </Text>
+                  <Text className={styles.anomalyTime}>
+                    {formatDurationHours(anomaly.durationHours)} · 偏离 {anomaly.deviation.toFixed(1)}℃
+                  </Text>
+                </View>
+              </View>
+              <View className={styles.anomalyRight}>
+                <Text className={styles.anomalyPeak}>{anomaly.peakTemp}℃</Text>
+                <Text className={styles.anomalyArrow}>›</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
       <View className={styles.stageList}>
         <Text className={styles.stageListTitle}>各阶段温度详情</Text>
         {selectedContainer.stages.map((stage, idx) => {
@@ -231,6 +275,66 @@ const TemperaturePage: React.FC = () => {
                 </View>
               ))}
             </ScrollView>
+          </View>
+        </View>
+      )}
+
+      {showAnomalyDetail && selectedAnomaly && (
+        <View className={styles.anomalyModal}>
+          <View className={styles.modalMask} onClick={() => setShowAnomalyDetail(false)} />
+          <View className={classnames(styles.modalPanel, styles[selectedAnomaly.severity])}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>异常事件详情</Text>
+              <Text className={styles.modalClose} onClick={() => setShowAnomalyDetail(false)}>×</Text>
+            </View>
+
+            <View className={styles.modalSeverity}>
+              <View className={styles.modalSeverityIcon}>
+                <Text>{selectedAnomaly.severity === 'danger' ? '🚨' : '⚠️'}</Text>
+              </View>
+              <View>
+                <Text className={styles.modalSeverityText}>
+                  {selectedAnomaly.severity === 'danger' ? '温度超限' : '温度预警'}
+                </Text>
+                <Text className={styles.modalSeveritySub}>
+                  {selectedAnomaly.direction === 'overheat' ? '温度偏高' : '温度偏低'} · {selectedAnomaly.stageName}
+                </Text>
+              </View>
+            </View>
+
+            <View className={styles.modalGrid}>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>发生阶段</Text>
+                <Text className={styles.modalCellValue}>{selectedAnomaly.stageName}</Text>
+              </View>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>持续时长</Text>
+                <Text className={styles.modalCellValue}>{formatDurationHours(selectedAnomaly.durationHours)}</Text>
+              </View>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>峰值温度</Text>
+                <Text className={styles.modalCellValue}>{selectedAnomaly.peakTemp}℃</Text>
+              </View>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>偏离程度</Text>
+                <Text className={styles.modalCellValue}>{selectedAnomaly.deviation.toFixed(1)}℃</Text>
+              </View>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>目标温区</Text>
+                <Text className={styles.modalCellValue}>{selectedAnomaly.tempZone.label}</Text>
+              </View>
+              <View className={styles.modalCell}>
+                <Text className={styles.modalCellLabel}>采样点数</Text>
+                <Text className={styles.modalCellValue}>{selectedAnomaly.pointCount} 个</Text>
+              </View>
+            </View>
+
+            <View className={styles.modalTimeRow}>
+              <Text className={styles.modalTimeLabel}>时间范围</Text>
+              <Text className={styles.modalTimeValue}>
+                {selectedAnomaly.startTime} ~ {selectedAnomaly.endTime}
+              </Text>
+            </View>
           </View>
         </View>
       )}

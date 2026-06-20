@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
-import { getContainerByNo } from '@/data/containers';
+import { getContainerByNo, getAnomalySummary } from '@/data/containers';
 import type { Container } from '@/types/container';
 import TempGauge from '@/components/TempGauge';
 import StageTimeline from '@/components/StageTimeline';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDurationHours } from '@/utils/temperature';
 import { useUserStore } from '@/store/userStore';
+import classnames from 'classnames';
 import styles from './index.module.scss';
 
 const ContainerDetailPage: React.FC = () => {
@@ -33,6 +34,11 @@ const ContainerDetailPage: React.FC = () => {
       const idx = container.stages.findIndex(s => !s.endTime);
       return idx >= 0 ? idx : container.stages.length - 1;
     }, [container]);
+
+  const anomalySummary = useMemo(() => {
+    if (!container) return null;
+    return getAnomalySummary(container);
+  }, [container]);
 
   if (!container) {
       return (
@@ -92,6 +98,46 @@ const ContainerDetailPage: React.FC = () => {
           status={container.tempStatus}
         />
       </View>
+
+      {anomalySummary && (
+        <View className={styles.anomalySummaryCard}>
+          {anomalySummary.count > 0 ? (
+            <>
+              <View className={styles.anomalySummaryIcon}>
+                <Text>{anomalySummary.worstSeverity === 'danger' ? '🚨' : '⚠️'}</Text>
+              </View>
+              <View className={styles.anomalySummaryContent}>
+                <Text className={styles.anomalySummaryTitle}>
+                  检测到 {anomalySummary.count} 次温度异常
+                </Text>
+                <Text className={styles.anomalySummaryDesc}>
+                  最严重 {anomalySummary.worstDirection === 'overheat' ? '偏高' : '偏低'}{anomalySummary.worstDeviation.toFixed(1)}℃
+                  （{anomalySummary.worstStage}，峰值 {anomalySummary.worstPeak}℃）
+                </Text>
+              </View>
+              <View
+                className={classnames(styles.anomalySummaryBadge, styles[anomalySummary.worstSeverity])}
+              >
+                <Text>{anomalySummary.worstSeverity === 'danger' ? '超限' : '预警'}</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View className={styles.anomalySummaryIcon} style={{ background: 'rgba(0, 180, 42, 0.1)' }}>
+                <Text>✅</Text>
+              </View>
+              <View className={styles.anomalySummaryContent}>
+                <Text className={styles.anomalySummaryTitle} style={{ color: '#00B42A' }}>
+                  温度全程正常
+                </Text>
+                <Text className={styles.anomalySummaryDesc}>
+                  所有采样点均在目标温区 {container.tempZone.label} 范围内
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+      )}
 
       <View className={styles.quickActions}>
         <View className={styles.actionCard} onClick={handleTemp}>

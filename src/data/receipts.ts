@@ -1,8 +1,14 @@
-import type { ReceiptRecord, TempZone, UserRole } from '@/types/container';
+import type { ReceiptRecord, TempZone, UserRole, QualityInspection, InspectionResult } from '@/types/container';
 import { getContainerByNo, markContainerSigned, mockContainers } from './containers';
 import dayjs from 'dayjs';
 
 const now = dayjs();
+
+export const resultTextMap: Record<InspectionResult, string> = {
+  passed: '质检通过，准予入库',
+  rejected: '质检不合格，已安排退货',
+  conditional: '有条件接收，转加工处理',
+};
 
 const buildMockReceipts = (): ReceiptRecord[] => {
   const results: ReceiptRecord[] = [];
@@ -20,10 +26,19 @@ const buildMockReceipts = (): ReceiptRecord[] => {
       id: 'R002',
       offsetDay: 5,
       containerNo: 'MSKU5000685',
-      status: 'inspection' as const,
+      status: 'inspection_done' as const,
       operator: '张明远',
       temp: 1.8,
-      remark: '到货温度略微偏低（目标0-4℃），已送至质检区抽样检测，待出结果后决定入库或退货。'
+      remark: '到货温度略微偏低（目标0-4℃），已送至质检区抽样检测，待出结果后决定入库或退货。',
+      inspection: {
+        id: 'Q001',
+        receiptId: 'R002',
+        result: 'conditional' as const,
+        resultText: '有条件接收，转加工处理',
+        handler: '李质检',
+        handleTime: now.subtract(3, 'day').format('YYYY-MM-DD HH:mm:ss'),
+        remark: '抽样检测菌落总数达标，风味略有变化，不影响加工使用。已转深加工区做巴氏杀菌处理。'
+      }
     },
     {
       id: 'R003',
@@ -38,7 +53,7 @@ const buildMockReceipts = (): ReceiptRecord[] => {
       id: 'R004',
       offsetDay: 12,
       containerNo: 'MSKU5000822',
-      status: 'normal' as const,
+      status: 'inspection' as const,
       operator: '张明远',
       temp: 3.2,
       remark: '车厘子外观新鲜，温度2-8℃区间内保持良好，已入库C区01位，部分样品送品控检测糖度。'
@@ -49,7 +64,10 @@ const buildMockReceipts = (): ReceiptRecord[] => {
     const container = mockContainers.find(c => c.containerNo === p.containerNo);
     if (!container) continue;
     const zone: TempZone = container.tempZone;
-    results.push({
+    const statusText = p.status === 'normal' ? '正常收货'
+      : p.status === 'inspection' ? '需质检复查'
+      : '质检已完成';
+    const record: ReceiptRecord = {
       id: p.id,
       containerNo: p.containerNo,
       billNo: container.billNo,
@@ -62,11 +80,13 @@ const buildMockReceipts = (): ReceiptRecord[] => {
       sealNo: container.sealNo,
       sealIntact: true,
       status: p.status,
-      statusText: p.status === 'normal' ? '正常收货' : '需质检复查',
+      statusText,
       remark: p.remark,
       tempZone: zone,
-      inTempRange: p.temp >= zone.min && p.temp <= zone.max
-    });
+      inTempRange: p.temp >= zone.min && p.temp <= zone.max,
+      inspection: p.inspection,
+    };
+    results.push(record);
     markContainerSigned(p.containerNo);
   }
   return results;
@@ -134,4 +154,41 @@ export const createReceipt = (input: CreateReceiptInput): ReceiptRecord => {
   mockReceipts.unshift(newReceipt);
   markContainerSigned(container.containerNo);
   return newReceipt;
+};
+
+export type UpdateInspectionInput = {
+  receiptId: string;
+  result: InspectionResult;
+  handler: string;
+  remark?: string;
+  customerId?: string;
+};
+
+export const updateInspection = (input: UpdateInspectionInput): ReceiptRecord => {
+  const receipt = getReceiptById(input.receiptId);
+  if (!receipt) {
+    throw new Error(`签收单 ${input.receiptId} 不存在`);
+  }
+  const container = getContainerByNo(receipt.containerNo, input.customerId);
+  if (!container) {
+    throw new Error(`签收单 ${input.receiptId} 所属货柜不属于当前客户`);
+  }
+  if (receipt.status !== 'inspection') {
+    throw new Error(`签收单状态不是"需质检复查"，无法提交质检结论`);
+  }
+
+  const inspection: QualityInspection = {
+    id: `Q${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    receiptId: input.receiptId,
+    result: input.result,
+    resultText: resultTextMap[input.result],
+    handler: input.handler,
+    handleTime: now.format('YYYY-MM-DD HH:mm:ss'),
+    remark: input.remark?.trim() || '',
+  };
+
+  receipt.inspection = inspection;
+  receipt.status = 'inspection_done';
+  receipt.statusText = '质检已完成';
+  return receipt;
 };

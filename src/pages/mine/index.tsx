@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/store/userStore';
@@ -6,37 +6,38 @@ import { getReceipts } from '@/data/receipts';
 import { getContainersByCustomer } from '@/data/containers';
 import styles from './index.module.scss';
 
-const menuGroups = [
-  {
-    title: '常用功能',
-    items: [
-      { icon: '📦', iconBg: 'rgba(14, 124, 134, 0.1)', title: '我的订单', desc: '查看全部订单状态', path: '' },
-      { icon: '📋', iconBg: 'rgba(0, 180, 42, 0.1)', title: '签收记录', desc: '历史签收单据', path: '', badge: 0 },
-      { icon: '🌡️', iconBg: 'rgba(255, 125, 0, 0.1)', title: '温度预警', desc: '关注异常货柜', path: '', badge: 1 },
-      { icon: '📊', iconBg: 'rgba(22, 93, 255, 0.1)', title: '数据报表', desc: '月度温度统计', path: '' }
-    ]
-  },
-  {
-    title: '账号与设置',
-    items: [
-      { icon: '👥', iconBg: 'rgba(114, 46, 209, 0.1)', title: '子账号管理', desc: '添加公司员工账号', path: '' },
-      { icon: '🔔', iconBg: 'rgba(245, 63, 63, 0.1)', title: '消息通知', desc: '到货/温度异常提醒', path: '' },
-      { icon: '❓', iconBg: 'rgba(14, 124, 134, 0.1)', title: '帮助中心', desc: '常见问题与客服', path: '' },
-      { icon: '📞', iconBg: 'rgba(0, 180, 42, 0.1)', title: '联系客服', desc: '7x24小时服务热线', path: '' }
-    ]
-  }
-];
-
 const MinePage: React.FC = () => {
   const { profile } = useUserStore();
-  const receipts = getReceipts(profile.id);
-  const containers = getContainersByCustomer('CUST001');
+  const containers = useMemo(() => getContainersByCustomer(profile.customerId), [profile.customerId]);
+  const receipts = useMemo(() => getReceipts(profile.customerId, profile.name), [profile.customerId, profile.name]);
 
-  const stats = {
+  const stats = useMemo(() => ({
     total: containers.length,
     pending: containers.filter(c => c.status === 'delivery' || c.status === 'port').length,
-    signed: receipts.length
-  };
+    signed: receipts.length,
+    tempWarning: containers.filter(c => c.tempStatus !== 'normal').length
+  }), [containers, receipts]);
+
+  const menuGroups = useMemo(() => [
+    {
+      title: '常用功能',
+      items: [
+        { icon: '📦', iconBg: 'rgba(14, 124, 134, 0.1)', title: '我的订单', desc: '查看全部订单状态', path: '' },
+        { icon: '📋', iconBg: 'rgba(0, 180, 42, 0.1)', title: '签收记录', desc: '历史签收单据', path: '', badge: receipts.length },
+        { icon: '🌡️', iconBg: 'rgba(255, 125, 0, 0.1)', title: '温度预警', desc: '关注异常货柜', path: '', badge: stats.tempWarning },
+        { icon: '📊', iconBg: 'rgba(22, 93, 255, 0.1)', title: '数据报表', desc: '月度温度统计', path: '' }
+      ]
+    },
+    {
+      title: '账号与设置',
+      items: [
+        { icon: '👥', iconBg: 'rgba(114, 46, 209, 0.1)', title: '子账号管理', desc: '添加公司员工账号', path: '' },
+        { icon: '🔔', iconBg: 'rgba(245, 63, 63, 0.1)', title: '消息通知', desc: '到货/温度异常提醒', path: '' },
+        { icon: '❓', iconBg: 'rgba(14, 124, 134, 0.1)', title: '帮助中心', desc: '常见问题与客服', path: '' },
+        { icon: '📞', iconBg: 'rgba(0, 180, 42, 0.1)', title: '联系客服', desc: '7x24小时服务热线', path: '' }
+      ]
+    }
+  ], [receipts.length, stats.tempWarning]);
 
   const handleMenuClick = (item: typeof menuGroups[0]['items'][0]) => {
     if (item.title === '签收记录') {
@@ -75,6 +76,10 @@ const MinePage: React.FC = () => {
         <View className={styles.statItem}>
           <Text className={styles.statNum}>{stats.signed}</Text>
           <Text className={styles.statLabel}>已签收</Text>
+        </View>
+        <View className={styles.statItem}>
+          <Text className={styles.statNum} style={{ color: stats.tempWarning > 0 ? '#FF7D00' : undefined }}>{stats.tempWarning}</Text>
+          <Text className={styles.statLabel}>温度预警</Text>
         </View>
       </View>
 

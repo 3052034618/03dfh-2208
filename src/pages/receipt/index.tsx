@@ -2,10 +2,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Input, ScrollView, Textarea } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { getPendingArrival } from '@/data/containers';
-import { getReceipts, createReceipt } from '@/data/receipts';
+import { getReceipts, createReceipt, updateInspection, resultTextMap } from '@/data/receipts';
 import ReceiptCard from '@/components/ReceiptCard';
 import { useUserStore } from '@/store/userStore';
-import type { Container } from '@/types/container';
+import type { Container, InspectionResult } from '@/types/container';
 import classnames from 'classnames';
 import styles from './index.module.scss';
 
@@ -20,6 +20,12 @@ const ReceiptPage: React.FC = () => {
   const [sealIntact, setSealIntact] = useState<boolean | null>(null);
   const [receiptType, setReceiptType] = useState<'normal' | 'inspection' | null>(null);
   const [remark, setRemark] = useState('');
+
+  const [showInspectionForm, setShowInspectionForm] = useState(false);
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string>('');
+  const [inspectionResult, setInspectionResult] = useState<InspectionResult | null>(null);
+  const [inspectionHandler, setInspectionHandler] = useState('');
+  const [inspectionRemark, setInspectionRemark] = useState('');
 
   const pendingList = useMemo(
     () => getPendingArrival(profile.customerId),
@@ -97,6 +103,47 @@ const ReceiptPage: React.FC = () => {
     } catch (e: any) {
       console.error('[ReceiptPage] submit error:', e);
       Taro.showToast({ title: e?.message || '提交失败，箱子可能不属于当前客户', icon: 'none', duration: 2500 });
+    }
+  };
+
+  const handleOpenInspection = (receiptId: string) => {
+    setSelectedReceiptId(receiptId);
+    setInspectionResult(null);
+    setInspectionHandler(profile.name);
+    setInspectionRemark('');
+    setShowInspectionForm(true);
+  };
+
+  const handleSubmitInspection = () => {
+    if (!inspectionResult) {
+      Taro.showToast({ title: '请选择质检结果', icon: 'none' });
+      return;
+    }
+    if (!inspectionHandler.trim()) {
+      Taro.showToast({ title: '请填写处理人', icon: 'none' });
+      return;
+    }
+
+    try {
+      updateInspection({
+        receiptId: selectedReceiptId,
+        result: inspectionResult,
+        handler: inspectionHandler.trim(),
+        remark: inspectionRemark.trim(),
+        customerId: profile.customerId
+      });
+
+      console.log('[ReceiptPage] inspection submitted');
+      Taro.showToast({ title: '质检结论已提交', icon: 'success' });
+
+      setTimeout(() => {
+        setRefreshTick(t => t + 1);
+        setShowInspectionForm(false);
+        Taro.navigateTo({ url: `/pages/receipt-detail/index?id=${selectedReceiptId}` });
+      }, 500);
+    } catch (e: any) {
+      console.error('[ReceiptPage] inspection error:', e);
+      Taro.showToast({ title: e?.message || '提交失败', icon: 'none', duration: 2500 });
     }
   };
 
@@ -290,7 +337,28 @@ const ReceiptPage: React.FC = () => {
               <Text className={styles.count}>共 {receiptHistory.length} 条</Text>
             </View>
             {receiptHistory.length > 0 ? (
-              receiptHistory.map(r => <ReceiptCard key={r.id} receipt={r} />)
+              receiptHistory.map(r => (
+                <View key={r.id}>
+                  <ReceiptCard receipt={r} />
+                  {r.status === 'inspection' && (
+                    <View className={styles.inspectionAction} onClick={() => handleOpenInspection(r.id)}>
+                      <View className={styles.inspectionActionIcon}>
+                        <Text>🧪</Text>
+                      </View>
+                      <View className={styles.inspectionActionContent}>
+                        <Text className={styles.inspectionActionTitle}>补充质检结论</Text>
+                        <Text className={styles.inspectionActionDesc}>
+                          该单据需质检复查，点击录入质检结果
+                        </Text>
+                      </View>
+                      <View className={styles.inspectionActionBtn}>
+                        <Text>去处理</Text>
+                        <Text style={{ marginLeft: '4rpx' }}>›</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              ))
             ) : (
               <View className={styles.emptyState}>
                 <Text className={styles.emptyIcon}>📋</Text>
@@ -312,6 +380,92 @@ const ReceiptPage: React.FC = () => {
             onClick={handleSubmit}
           >
             <Text>提交签收并生成记录</Text>
+          </View>
+        </View>
+      )}
+
+      {showInspectionForm && (
+        <View className={styles.inspectionModal}>
+          <View className={styles.modalMask} onClick={() => setShowInspectionForm(false)} />
+          <View className={styles.inspectionPanel}>
+            <View className={styles.inspectionHeader}>
+              <Text className={styles.inspectionTitle}>🧪 质检结论录入</Text>
+              <Text className={styles.inspectionClose} onClick={() => setShowInspectionForm(false)}>×</Text>
+            </View>
+
+            <View className={styles.formGroup}>
+              <View className={styles.formLabel}>
+                <Text className={styles.required}>*</Text>
+                <Text>质检结果</Text>
+              </View>
+              <View className={styles.segmentGroup}>
+                <View
+                  className={classnames(styles.segmentItem, inspectionResult === 'passed' && styles.activeNormal)}
+                  onClick={() => setInspectionResult('passed')}
+                >
+                  <Text className={styles.segmentIcon}>✅</Text>
+                  <Text className={styles.segmentLabel}>质检通过</Text>
+                  <Text className={styles.segmentDesc}>准予入库</Text>
+                </View>
+                <View
+                  className={classnames(styles.segmentItem, inspectionResult === 'conditional' && styles.activeInspect)}
+                  onClick={() => setInspectionResult('conditional')}
+                >
+                  <Text className={styles.segmentIcon}>⚠️</Text>
+                  <Text className={styles.segmentLabel}>有条件接收</Text>
+                  <Text className={styles.segmentDesc}>转加工处理</Text>
+                </View>
+                <View
+                  className={classnames(styles.segmentItem, inspectionResult === 'rejected' && styles.activeInspect)}
+                  onClick={() => setInspectionResult('rejected')}
+                >
+                  <Text className={styles.segmentIcon}>❌</Text>
+                  <Text className={styles.segmentLabel}>质检不合格</Text>
+                  <Text className={styles.segmentDesc}>安排退货</Text>
+                </View>
+              </View>
+            </View>
+
+            <View className={styles.formGroup}>
+              <View className={styles.formLabel}>
+                <Text className={styles.required}>*</Text>
+                <Text>处理人</Text>
+              </View>
+              <Input
+                className={styles.formInput}
+                placeholder='请输入质检处理人姓名'
+                value={inspectionHandler}
+                onInput={e => setInspectionHandler(e.detail.value)}
+                maxlength={20}
+              />
+            </View>
+
+            <View className={styles.formGroup}>
+              <View className={styles.formLabel}>
+                <Text>备注（选填）</Text>
+              </View>
+              <Textarea
+                className={styles.textareaInput}
+                placeholder='如：质检抽样情况、不合格项说明、后续处理建议等...'
+                value={inspectionRemark}
+                onInput={e => setInspectionRemark(e.detail.value)}
+                maxlength={300}
+              />
+            </View>
+
+            <View style={{ height: '160rpx' }} />
+
+            <View className={styles.inspectionBar}>
+              <View className={styles.btnSecondary} onClick={() => setShowInspectionForm(false)}>
+                <Text>取消</Text>
+              </View>
+              <View
+                className={classnames(styles.btnPrimary, !inspectionResult && styles.disabled)}
+                onClick={handleSubmitInspection}
+              >
+                <Text>提交质检结论</Text>
+              </View>
+            </View>
           </View>
         </View>
       )}

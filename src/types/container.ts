@@ -2,7 +2,9 @@ export type ContainerStatus = 'loading' | 'transit' | 'port' | 'delivery' | 'arr
 
 export type TempStatus = 'normal' | 'warn' | 'danger';
 
-export type ReceiptStatus = 'pending' | 'normal' | 'inspection';
+export type ReceiptStatus = 'pending' | 'normal' | 'inspection' | 'inspection_done';
+
+export type InspectionResult = 'passed' | 'rejected' | 'conditional';
 
 export type UserRole = 'importer' | 'pharmacy' | 'warehouse';
 
@@ -16,6 +18,32 @@ export interface TempPoint {
   time: string;
   temperature: number;
   humidity?: number;
+}
+
+export interface TemperatureAnomaly {
+  id: string;
+  containerNo: string;
+  stage: 'loading' | 'transit' | 'port' | 'delivery';
+  stageName: string;
+  startTime: string;
+  endTime: string;
+  durationHours: number;
+  severity: TempStatus;
+  direction: 'overheat' | 'undercool';
+  peakTemp: number;
+  deviation: number;
+  tempZone: TempZone;
+  pointCount: number;
+}
+
+export interface QualityInspection {
+  id: string;
+  receiptId: string;
+  result: InspectionResult;
+  resultText: string;
+  handler: string;
+  handleTime: string;
+  remark: string;
 }
 
 export interface TransportStage {
@@ -76,6 +104,7 @@ export interface ReceiptRecord {
   remark: string;
   tempZone: TempZone;
   inTempRange: boolean;
+  inspection?: QualityInspection;
 }
 
 export interface UserProfile {

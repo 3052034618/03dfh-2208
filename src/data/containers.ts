@@ -1,8 +1,10 @@
-import type { Container, TransportStage } from '@/types/container';
+import type { Container, TransportStage, TemperatureAnomaly, TempStatus } from '@/types/container';
 import { generateTempPoints, calcStageStats, getTempStatus } from '@/utils/temperature';
 import dayjs from 'dayjs';
 
 const now = dayjs();
+
+const SEVERITY_THRESHOLD = 1.5;
 
 const createStages = (zoneMin: number, zoneMax: number, currentStageIdx: number): TransportStage[] => {
   const stageConfigs = [
@@ -175,3 +177,78 @@ export const getPendingArrival = (customerId: string) =>
     !signedContainerNos.has(c.containerNo) &&
     (c.status === 'delivery' || c.status === 'port')
   );
+
+export const detectAnomalies = (container: Container): TemperatureAnomaly[] => {
+  const anomalies: TemperatureAnomaly[] = [];
+  const zone = container.tempZone;
+  let anomalyId = 0;
+
+  for (const stage of container.stages) {
+    let currentRun: { startIdx: number; points: number[]; startTime: string } | null = null;
+
+    const flushRun = (endIdx: number) => {
+      if (!currentRun) return;
+      const points = currentRun.points;
+      const isOverheat = points.some(t => t > zone.max);
+      const peakTemp = isOverheat ? Math.max(...points) : Math.min(...points);
+      const deviation = isOverheat ? peakTemp - zone.max : zone.min - peakTemp;
+      const severity: TempStatus = deviation >= SEVERITY_THRESHOLD ? 'danger' : 'warn';
+
+      anomalies.push({
+        id: `${container.id}-A${++anomalyId}`,
+        containerNo: container.containerNo,
+        stage: stage.stage,
+        stageName: stage.stageName,
+        startTime: currentRun.startTime,
+        endTime: stage.tempPoints[endIdx].time,
+        durationHours: Math.max(0.1, (points.length - 1) * 0.5),
+        severity,
+        direction: isOverheat ? 'overheat' : 'undercool',
+        peakTemp: Math.round(peakTemp * 10) / 10,
+        deviation: Math.round(deviation * 10) / 10,
+        tempZone: zone,
+        pointCount: points.length,
+      });
+      currentRun = null;
+    };
+
+    for (let i = 0; i < stage.tempPoints.length; i++) {
+      const p = stage.tempPoints[i];
+      const isOutOfRange = p.temperature < zone.min || p.temperature > zone.max;
+      if (isOutOfRange) {
+        if (!currentRun) {
+          currentRun = { startIdx: i, points: [], startTime: p.time };
+        }
+        currentRun.points.push(p.temperature);
+      } else if (currentRun) {
+        flushRun(i - 1);
+      }
+    }
+    if (currentRun) {
+      flushRun(stage.tempPoints.length - 1);
+    }
+  }
+
+  return anomalies;
+};
+
+export const getAnomalySummary = (container: Container) => {
+  const anomalies = detectAnomalies(container);
+  if (anomalies.length === 0) {
+    return { count: 0, worstDeviation: 0, worstSeverity: 'normal' as TempStatus, worstDirection: null as null };
+  }
+  const worst = anomalies.reduce((a, b) => Math.abs(a.deviation) > Math.abs(b.deviation) ? a : b);
+  return {
+    count: anomalies.length,
+    worstDeviation: worst.deviation,
+    worstSeverity: worst.severity,
+    worstDirection: worst.direction,
+    worstStage: worst.stageName,
+    worstPeak: worst.peakTemp,
+  };
+};
+
+export const filterByTempStatus = (containers: Container[], status: TempStatus | 'all'): Container[] => {
+  if (status === 'all') return containers;
+  return containers.filter(c => c.tempStatus === status);
+};
