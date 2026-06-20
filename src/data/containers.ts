@@ -1,4 +1,4 @@
-import type { Container, TransportStage, TemperatureAnomaly, TempStatus } from '@/types/container';
+import type { Container, TransportStage, TemperatureAnomaly, TempStatus, AnomalyHandlingRecord, AnomalyHandlingStatus, AnomalyResponsibleParty } from '@/types/container';
 import { generateTempPoints, calcStageStats, getTempStatus } from '@/utils/temperature';
 import dayjs from 'dayjs';
 
@@ -178,7 +178,7 @@ export const getPendingArrival = (customerId: string) =>
     (c.status === 'delivery' || c.status === 'port')
   );
 
-export const detectAnomalies = (container: Container): TemperatureAnomaly[] => {
+const detectAnomaliesBase = (container: Container): TemperatureAnomaly[] => {
   const anomalies: TemperatureAnomaly[] = [];
   const zone = container.tempZone;
   let anomalyId = 0;
@@ -233,7 +233,7 @@ export const detectAnomalies = (container: Container): TemperatureAnomaly[] => {
 };
 
 export const getAnomalySummary = (container: Container) => {
-  const anomalies = detectAnomalies(container);
+  const anomalies = detectAnomaliesBase(container);
   if (anomalies.length === 0) {
     return { count: 0, worstDeviation: 0, worstSeverity: 'normal' as TempStatus, worstDirection: null as null };
   }
@@ -251,4 +251,151 @@ export const getAnomalySummary = (container: Container) => {
 export const filterByTempStatus = (containers: Container[], status: TempStatus | 'all'): Container[] => {
   if (status === 'all') return containers;
   return containers.filter(c => c.tempStatus === status);
+};
+
+export const responsiblePartyTextMap: Record<AnomalyResponsibleParty, string> = {
+  carrier: '承运商',
+  shipper: '发货方',
+  warehouse: '仓库',
+  other: '其他'
+};
+
+let handlingIdCounter = 100;
+
+const mockAnomalyHandlings: AnomalyHandlingRecord[] = (() => {
+  const list: AnomalyHandlingRecord[] = [];
+  const preset = [
+    { anomalyId: 'C1000-A1', containerNo: 'MSKU5000000', customerId: 'CUST001', status: 'in_progress' as const, cause: '海上运输阶段制冷机组短暂停机后恢复', solution: '已联系承运商查明原因，要求提供设备维护记录，货物到港后重点检测品质', responsibleParty: 'carrier' as const, handler: '张明远', createDay: -3, updateDay: -1 },
+    { anomalyId: 'C1003-A1', containerNo: 'MSKU5000411', customerId: 'CUST001', status: 'closed' as const, cause: '港区等待期间环境温度过高，冷机负载过大', solution: '已协调港区优先安排驳运，货物品质抽检合格，准予入库', responsibleParty: 'carrier' as const, handler: '张明远', createDay: -8, updateDay: -5, closeDay: -5 },
+  ];
+
+  for (const p of preset) {
+    list.push({
+      id: `H${++handlingIdCounter}`,
+      anomalyId: p.anomalyId,
+      containerNo: p.containerNo,
+      customerId: p.customerId,
+      status: p.status,
+      cause: p.cause,
+      solution: p.solution,
+      responsibleParty: p.responsibleParty,
+      responsiblePartyText: responsiblePartyTextMap[p.responsibleParty],
+      handler: p.handler,
+      createTime: now.add(p.createDay, 'day').format('YYYY-MM-DD HH:mm:ss'),
+      updateTime: now.add(p.updateDay, 'day').format('YYYY-MM-DD HH:mm:ss'),
+      closeTime: p.status === 'closed' ? now.add((p as any).closeDay, 'day').format('YYYY-MM-DD HH:mm:ss') : undefined,
+    });
+  }
+  return list;
+})();
+
+const findHandlingByAnomalyId = (anomalyId: string) =>
+  mockAnomalyHandlings.find(h => h.anomalyId === anomalyId);
+
+export const detectAnomalies = (container: Container): TemperatureAnomaly[] => {
+  const anomalies = detectAnomaliesBase(container);
+  return anomalies.map(a => {
+    const handling = findHandlingByAnomalyId(a.id);
+    return handling ? { ...a, handling } : a;
+  });
+};
+
+export const getAnomalyHandlingsByCustomer = (customerId: string): AnomalyHandlingRecord[] =>
+  mockAnomalyHandlings.filter(h => h.customerId === customerId);
+
+export const getAnomalyHandlingByAnomalyId = (anomalyId: string): AnomalyHandlingRecord | undefined =>
+  findHandlingByAnomalyId(anomalyId);
+
+export type CreateAnomalyHandlingInput = {
+  anomalyId: string;
+  containerNo: string;
+  customerId: string;
+  cause: string;
+  solution: string;
+  responsibleParty: AnomalyResponsibleParty;
+  handler: string;
+  remark?: string;
+};
+
+export const createAnomalyHandling = (input: CreateAnomalyHandlingInput): AnomalyHandlingRecord => {
+  const existing = findHandlingByAnomalyId(input.anomalyId);
+  if (existing) {
+    throw new Error('该异常事件已有处置单，请勿重复创建');
+  }
+
+  const record: AnomalyHandlingRecord = {
+    id: `H${++handlingIdCounter}`,
+    anomalyId: input.anomalyId,
+    containerNo: input.containerNo,
+    customerId: input.customerId,
+    status: 'in_progress',
+    cause: input.cause,
+    solution: input.solution,
+    responsibleParty: input.responsibleParty,
+    responsiblePartyText: responsiblePartyTextMap[input.responsibleParty],
+    handler: input.handler,
+    createTime: now.format('YYYY-MM-DD HH:mm:ss'),
+    updateTime: now.format('YYYY-MM-DD HH:mm:ss'),
+    remark: input.remark,
+  };
+
+  mockAnomalyHandlings.push(record);
+  console.log('[AnomalyHandling] created:', record.id);
+  return record;
+};
+
+export type UpdateAnomalyHandlingInput = {
+  anomalyId: string;
+  status?: AnomalyHandlingStatus;
+  cause?: string;
+  solution?: string;
+  responsibleParty?: AnomalyResponsibleParty;
+  handler?: string;
+  remark?: string;
+  customerId?: string;
+};
+
+export const updateAnomalyHandling = (input: UpdateAnomalyHandlingInput): AnomalyHandlingRecord => {
+  const record = findHandlingByAnomalyId(input.anomalyId);
+  if (!record) {
+    throw new Error('处置单不存在');
+  }
+  if (input.customerId && record.customerId !== input.customerId) {
+    throw new Error('无权限修改该处置单');
+  }
+
+  if (input.status !== undefined) record.status = input.status;
+  if (input.cause !== undefined) record.cause = input.cause;
+  if (input.solution !== undefined) record.solution = input.solution;
+  if (input.responsibleParty !== undefined) {
+    record.responsibleParty = input.responsibleParty;
+    record.responsiblePartyText = responsiblePartyTextMap[input.responsibleParty];
+  }
+  if (input.handler !== undefined) record.handler = input.handler;
+  if (input.remark !== undefined) record.remark = input.remark;
+  record.updateTime = now.format('YYYY-MM-DD HH:mm:ss');
+
+  if (input.status === 'closed' && !record.closeTime) {
+    record.closeTime = now.format('YYYY-MM-DD HH:mm:ss');
+  }
+
+  console.log('[AnomalyHandling] updated:', record.id);
+  return record;
+};
+
+export const getAnomalyStatsByCustomer = (customerId: string) => {
+  const containers = getContainersByCustomer(customerId);
+  const anomaliesWithHandling = containers.flatMap(c => detectAnomalies(c));
+
+  const pending = anomaliesWithHandling.filter(a => !a.handling || a.handling.status === 'pending').length;
+  const inProgress = anomaliesWithHandling.filter(a => a.handling?.status === 'in_progress').length;
+  const closed = anomaliesWithHandling.filter(a => a.handling?.status === 'closed').length;
+
+  return {
+    total: anomaliesWithHandling.length,
+    pending,
+    inProgress,
+    closed,
+    containerCount: anomaliesWithHandling.filter(a => a.handling?.status !== 'closed').length,
+  };
 };

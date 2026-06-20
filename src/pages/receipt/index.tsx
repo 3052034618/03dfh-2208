@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Input, ScrollView, Textarea } from '@tarojs/components';
 import Taro from '@tarojs/taro';
+import dayjs from 'dayjs';
 import { getPendingArrival } from '@/data/containers';
 import { getReceipts, createReceipt, updateInspection, resultTextMap } from '@/data/receipts';
 import ReceiptCard from '@/components/ReceiptCard';
@@ -25,15 +26,17 @@ const ReceiptPage: React.FC = () => {
   const [selectedReceiptId, setSelectedReceiptId] = useState<string>('');
   const [inspectionResult, setInspectionResult] = useState<InspectionResult | null>(null);
   const [inspectionHandler, setInspectionHandler] = useState('');
+  const [inspectionHandleTime, setInspectionHandleTime] = useState('');
   const [inspectionRemark, setInspectionRemark] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const pendingList = useMemo(
     () => getPendingArrival(profile.customerId),
     [profile.customerId, refreshTick]
   );
   const receiptHistory = useMemo(
-    () => getReceipts(profile.customerId, profile.name),
-    [profile.customerId, profile.name, refreshTick]
+    () => getReceipts(profile.customerId),
+    [profile.customerId, refreshTick]
   );
 
   const fillFromContainer = useCallback((c: Container) => {
@@ -110,6 +113,7 @@ const ReceiptPage: React.FC = () => {
     setSelectedReceiptId(receiptId);
     setInspectionResult(null);
     setInspectionHandler(profile.name);
+    setInspectionHandleTime(dayjs().format('YYYY-MM-DD HH:mm'));
     setInspectionRemark('');
     setShowInspectionForm(true);
   };
@@ -125,12 +129,22 @@ const ReceiptPage: React.FC = () => {
     }
 
     try {
+      const handleTimeStr = inspectionHandleTime.trim();
+      let handleTime: string | undefined;
+      if (handleTimeStr) {
+        const parsed = dayjs(handleTimeStr);
+        if (parsed.isValid()) {
+          handleTime = parsed.format('YYYY-MM-DD HH:mm:ss');
+        }
+      }
+
       updateInspection({
         receiptId: selectedReceiptId,
         result: inspectionResult,
         handler: inspectionHandler.trim(),
         remark: inspectionRemark.trim(),
-        customerId: profile.customerId
+        customerId: profile.customerId,
+        handleTime
       });
 
       console.log('[ReceiptPage] inspection submitted');
@@ -438,6 +452,21 @@ const ReceiptPage: React.FC = () => {
                 onInput={e => setInspectionHandler(e.detail.value)}
                 maxlength={20}
               />
+            </View>
+
+            <View className={styles.formGroup}>
+              <View className={styles.formLabel}>
+                <Text className={styles.required}>*</Text>
+                <Text>实际处理时间</Text>
+              </View>
+              <Input
+                className={styles.formInput}
+                placeholder='请输入处理时间，如 2024-06-15 14:30'
+                value={inspectionHandleTime}
+                onInput={e => setInspectionHandleTime(e.detail.value)}
+                maxlength={30}
+              />
+              <Text className={styles.formHint}>默认当前时间，可手动修改为实际质检完成时间</Text>
             </View>
 
             <View className={styles.formGroup}>

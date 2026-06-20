@@ -98,6 +98,13 @@
   }
 }
 
+.formHint {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 8rpx;
+  display: block;
+}
+
 .inputRow {
   display: flex;
   gap: $spacing-md;

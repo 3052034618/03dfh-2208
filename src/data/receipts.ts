@@ -162,6 +162,7 @@ export type UpdateInspectionInput = {
   handler: string;
   remark?: string;
   customerId?: string;
+  handleTime?: string;
 };
 
 export const updateInspection = (input: UpdateInspectionInput): ReceiptRecord => {
@@ -183,7 +184,7 @@ export const updateInspection = (input: UpdateInspectionInput): ReceiptRecord =>
     result: input.result,
     resultText: resultTextMap[input.result],
     handler: input.handler,
-    handleTime: now.format('YYYY-MM-DD HH:mm:ss'),
+    handleTime: input.handleTime || now.format('YYYY-MM-DD HH:mm:ss'),
     remark: input.remark?.trim() || '',
   };
 

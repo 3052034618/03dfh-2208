@@ -84,10 +84,25 @@
   align-items: center;
   gap: 4rpx;
   border-right: 1rpx solid $color-divider;
+  position: relative;
+  transition: all $transition-fast;
 
   &:last-child {
     border-right: none;
   }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.statArrow {
+  font-size: 20rpx;
+  color: $color-text-disabled;
+  position: absolute;
+  right: 8rpx;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .statNum {

@@ -9,7 +9,7 @@ import styles from './index.module.scss';
 const MinePage: React.FC = () => {
   const { profile } = useUserStore();
   const containers = useMemo(() => getContainersByCustomer(profile.customerId), [profile.customerId]);
-  const receipts = useMemo(() => getReceipts(profile.customerId, profile.name), [profile.customerId, profile.name]);
+  const receipts = useMemo(() => getReceipts(profile.customerId), [profile.customerId]);
 
   const stats = useMemo(() => ({
     total: containers.length,
@@ -17,6 +17,16 @@ const MinePage: React.FC = () => {
     signed: receipts.length,
     tempWarning: containers.filter(c => c.tempStatus !== 'normal').length
   }), [containers, receipts]);
+
+  const handleStatClick = (key: string) => {
+    if (key === 'signed') {
+      Taro.switchTab({ url: '/pages/receipt/index' });
+    } else if (key === 'tempWarning') {
+      Taro.switchTab({ url: '/pages/temperature/index' });
+    } else if (key === 'pending') {
+      Taro.switchTab({ url: '/pages/index/index' });
+    }
+  };
 
   const menuGroups = useMemo(() => [
     {
@@ -69,17 +79,20 @@ const MinePage: React.FC = () => {
           <Text className={styles.statNum}>{stats.total}</Text>
           <Text className={styles.statLabel}>总货柜</Text>
         </View>
-        <View className={styles.statItem}>
-          <Text className={styles.statNum}>{stats.pending}</Text>
+        <View className={styles.statItem} onClick={() => handleStatClick('pending')}>
+          <Text className={styles.statNum} style={{ color: '#0E7C86' }}>{stats.pending}</Text>
           <Text className={styles.statLabel}>待处理</Text>
+          <Text className={styles.statArrow}>›</Text>
         </View>
-        <View className={styles.statItem}>
-          <Text className={styles.statNum}>{stats.signed}</Text>
+        <View className={styles.statItem} onClick={() => handleStatClick('signed')}>
+          <Text className={styles.statNum} style={{ color: '#00B42A' }}>{stats.signed}</Text>
           <Text className={styles.statLabel}>已签收</Text>
+          <Text className={styles.statArrow}>›</Text>
         </View>
-        <View className={styles.statItem}>
+        <View className={styles.statItem} onClick={() => handleStatClick('tempWarning')}>
           <Text className={styles.statNum} style={{ color: stats.tempWarning > 0 ? '#FF7D00' : undefined }}>{stats.tempWarning}</Text>
           <Text className={styles.statLabel}>温度预警</Text>
+          <Text className={styles.statArrow}>›</Text>
         </View>
       </View>
 

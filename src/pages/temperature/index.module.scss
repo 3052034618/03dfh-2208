@@ -508,3 +508,514 @@
   font-size: 36rpx;
   font-weight: bold;
 }
+
+.anomalyStatusBadge {
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+
+  &.pending {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.in_progress {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.closed {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-success;
+  }
+}
+
+.handlingSection {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.handlingSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.handlingSectionTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.handlingEditBtn {
+  padding: 8rpx 20rpx;
+  background: rgba(14, 124, 134, 0.1);
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.handlingContent {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.handlingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $spacing-md;
+
+  &:not(:last-child) {
+    padding-bottom: $spacing-sm;
+    border-bottom: 1rpx solid $color-divider-light;
+  }
+}
+
+.handlingLabel {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+  padding-top: 4rpx;
+}
+
+.handlingValue {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-align: right;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.handlingStatusTag {
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.in_progress {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.closed {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-success;
+  }
+}
+
+.handlingEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-lg 0;
+  text-align: center;
+}
+
+.handlingEmptyTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  margin-bottom: 4rpx;
+}
+
+.handlingEmptyDesc {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+}
+
+.handlingModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 1001;
+}
+
+.handlingPanel {
+  position: relative;
+  width: 100%;
+  background: $color-bg-card;
+  border-top-left-radius: $radius-xl;
+  border-top-right-radius: $radius-xl;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.handlingPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+  flex-shrink: 0;
+}
+
+.handlingPanelTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.handlingPanelClose {
+  font-size: 40rpx;
+  color: $color-text-tertiary;
+  padding: $spacing-xs;
+}
+
+.handlingFormBody {
+  flex: 1;
+  padding: $spacing-md $spacing-lg;
+  overflow-y: auto;
+}
+
+.formGroup {
+  margin-bottom: $spacing-md;
+}
+
+.formLabel {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  font-weight: $font-weight-medium;
+}
+
+.required {
+  color: $color-error;
+  font-size: $font-size-sm;
+}
+
+.statusSegmentGroup {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+}
+
+.statusSegmentItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.activePending {
+    background: rgba(245, 63, 63, 0.08);
+    border-color: $color-error;
+    color: $color-error;
+    font-weight: $font-weight-medium;
+  }
+
+  &.activeProgress {
+    background: rgba(255, 125, 0, 0.08);
+    border-color: $color-warning;
+    color: $color-warning;
+    font-weight: $font-weight-medium;
+  }
+
+  &.activeClosed {
+    background: rgba(0, 180, 42, 0.08);
+    border-color: $color-success;
+    color: $color-success;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.partyGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+}
+
+.partyItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.partyActive {
+    background: rgba(14, 124, 134, 0.08);
+    border-color: $color-primary;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.textareaInput {
+  width: 100%;
+  min-height: 160rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.formInput {
+  width: 100%;
+  height: 80rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.handlingFormBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-md $spacing-lg calc($spacing-md + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 10;
+}
+
+.btnSecondary {
+  flex: 1;
+  height: 88rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.btnPrimary {
+  flex: 2;
+  height: 88rpx;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  box-shadow: 0 4rpx 16rpx rgba(14, 124, 134, 0.25);
+
+  &:active {
+    opacity: 0.9;
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+    box-shadow: none;
+  }
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.anomalyOverview {
+  margin: $spacing-lg;
+  margin-bottom: 0;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.overviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.overviewTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.overviewSub {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.overviewStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.overviewStatItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-md $spacing-xs;
+  background: $color-bg-page;
+  border-radius: $radius-lg;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.active {
+    border-color: $color-primary;
+    background: rgba(14, 124, 134, 0.06);
+  }
+
+  &.pending .overviewStatNum { color: $color-error; }
+  &.inProgress .overviewStatNum { color: $color-warning; }
+  &.closed .overviewStatNum { color: $color-success; }
+}
+
+.overviewStatNum {
+  font-size: 44rpx;
+  font-weight: $font-weight-bold;
+  font-family: 'DIN', monospace;
+  color: $color-text-primary;
+  line-height: 1.2;
+}
+
+.overviewStatLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.anomalyContainerList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.anomalyContainerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-lg;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.8;
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    background: rgba(14, 124, 134, 0.05);
+  }
+}
+
+.acLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.acNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  font-family: 'DIN', monospace;
+  margin-bottom: 4rpx;
+}
+
+.acDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.acRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+  flex-shrink: 0;
+}
+
+.acStatusTag {
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.in_progress {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.closed {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-success;
+  }
+}
+
+.acCount {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.anomalyEmpty {
+  padding: $spacing-lg 0;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

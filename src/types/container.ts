@@ -6,6 +6,10 @@ export type ReceiptStatus = 'pending' | 'normal' | 'inspection' | 'inspection_do
 
 export type InspectionResult = 'passed' | 'rejected' | 'conditional';
 
+export type AnomalyHandlingStatus = 'pending' | 'in_progress' | 'closed';
+
+export type AnomalyResponsibleParty = 'carrier' | 'shipper' | 'warehouse' | 'other';
+
 export type UserRole = 'importer' | 'pharmacy' | 'warehouse';
 
 export interface TempZone {
@@ -18,6 +22,23 @@ export interface TempPoint {
   time: string;
   temperature: number;
   humidity?: number;
+}
+
+export interface AnomalyHandlingRecord {
+  id: string;
+  anomalyId: string;
+  containerNo: string;
+  customerId: string;
+  status: AnomalyHandlingStatus;
+  cause: string;
+  solution: string;
+  responsibleParty: AnomalyResponsibleParty;
+  responsiblePartyText: string;
+  handler: string;
+  createTime: string;
+  updateTime: string;
+  closeTime?: string;
+  remark?: string;
 }
 
 export interface TemperatureAnomaly {
@@ -34,6 +55,7 @@ export interface TemperatureAnomaly {
   deviation: number;
   tempZone: TempZone;
   pointCount: number;
+  handling?: AnomalyHandlingRecord;
 }
 
 export interface QualityInspection {

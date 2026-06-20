@@ -95,15 +95,23 @@
 }
 
 .anomalySummaryCard {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
   background: $color-bg-card;
   border-radius: $radius-lg;
   padding: $spacing-lg;
   box-shadow: $shadow-card;
   margin-bottom: $spacing-lg;
   border-left: 6rpx solid $color-warning;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.anomalySummaryTop {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
 }
 
 .anomalySummaryIcon {
@@ -116,6 +124,73 @@
   font-size: 36rpx;
   flex-shrink: 0;
   background: rgba(255, 125, 0, 0.1);
+}
+
+.handlingProgress {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.handlingProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.handlingProgressTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.handlingProgressArrow {
+  font-size: 22rpx;
+  color: $color-primary;
+}
+
+.handlingProgressBar {
+  display: flex;
+  height: 12rpx;
+  border-radius: $radius-round;
+  overflow: hidden;
+  background: $color-bg-hover;
+  margin-bottom: $spacing-sm;
+}
+
+.progressBarItem {
+  height: 100%;
+  transition: width 0.3s ease;
+
+  &:first-child {
+    border-top-left-radius: $radius-round;
+    border-bottom-left-radius: $radius-round;
+  }
+
+  &:last-child {
+    border-top-right-radius: $radius-round;
+    border-bottom-right-radius: $radius-round;
+  }
+}
+
+.handlingProgressLegend {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.legendDot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
 }
 
 .anomalySummaryContent {

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import { getReceiptById, resultTextMap } from '@/data/receipts';
-import { getContainerByNo } from '@/data/containers';
+import { getContainerByNo, detectAnomalies, getAnomalyStatsByCustomer } from '@/data/containers';
 import { useUserStore } from '@/store/userStore';
-import type { ReceiptRecord, InspectionResult } from '@/types/container';
+import type { ReceiptRecord, InspectionResult, Container } from '@/types/container';
 import classnames from 'classnames';
 import styles from './index.module.scss';
 
@@ -13,32 +13,89 @@ const ReceiptDetailPage: React.FC = () => {
   const id = router.params.id || '';
   const { profile } = useUserStore();
   const [receipt, setReceipt] = useState<ReceiptRecord | null>(null);
+  const [container, setContainer] = useState<Container | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(true);
 
   useEffect(() => {
     const r = getReceiptById(id);
     if (!r) {
       setReceipt(null);
+      setContainer(null);
       setHasPermission(true);
       console.error('[ReceiptDetail] not found:', id);
       return;
     }
-    const container = getContainerByNo(r.containerNo, profile.customerId);
-    if (!container) {
+    const c = getContainerByNo(r.containerNo, profile.customerId);
+    if (!c) {
       setReceipt(r);
+      setContainer(null);
       setHasPermission(false);
       console.warn('[ReceiptDetail] no permission for receipt:', id);
       return;
     }
     setReceipt(r);
+    setContainer(c);
     setHasPermission(true);
     console.log('[ReceiptDetail] loaded:', r.id);
   }, [id, profile.customerId]);
 
+  const anomalyInfo = useMemo(() => {
+    if (!container) return { count: 0, pending: 0, inProgress: 0, closed: 0 };
+    const anomalies = detectAnomalies(container);
+    let pending = 0, inProgress = 0, closed = 0;
+    anomalies.forEach(a => {
+      if (!a.handling) pending++;
+      else if (a.handling.status === 'pending') pending++;
+      else if (a.handling.status === 'in_progress') inProgress++;
+      else if (a.handling.status === 'closed') closed++;
+    });
+    return { count: anomalies.length, pending, inProgress, closed };
+  }, [container]);
+
   const shareText = useMemo(() => {
     if (!receipt || !hasPermission) return '';
-    return `【冷链签收单】\n签收编号：${receipt.id}\n箱号：${receipt.containerNo}\n货物：${receipt.goodsName}\n签收结果：${receipt.statusText}\n到货温度：${receipt.arrivalTemp}℃\n签收时间：${receipt.receiptTime}\n签收人：${receipt.receiptOperator}\n备注：${receipt.remark || '无'}`;
-  }, [receipt, hasPermission]);
+    const lines: string[] = [];
+    lines.push('【冷链签收单】');
+    lines.push('─────────────────');
+    lines.push(`签收编号：${receipt.id}`);
+    lines.push(`箱  号：${receipt.containerNo}`);
+    lines.push(`货  物：${receipt.goodsName}`);
+    lines.push(`提单号：${receipt.billNo}`);
+    lines.push(`目标温区：${receipt.tempZone.label}`);
+    lines.push('');
+    lines.push('【到货情况】');
+    const tempOK = receipt.arrivalTemp >= receipt.tempZone.min && receipt.arrivalTemp <= receipt.tempZone.max;
+    lines.push(`到货温度：${receipt.arrivalTemp}℃  (${tempOK ? '合格' : '异常'})`);
+    lines.push(`铅封状态：${receipt.sealIntact ? '完好' : '异常'}`);
+    lines.push(`签收结果：${receipt.statusText}`);
+    lines.push(`签收时间：${receipt.receiptTime}`);
+    lines.push(`签收人：${receipt.receiptOperator}`);
+    lines.push('');
+    if (receipt.inspection) {
+      lines.push('【质检结论】');
+      lines.push(`质检结果：${resultTextMap[receipt.inspection.result]}`);
+      lines.push(`处理人：${receipt.inspection.handler}`);
+      lines.push(`处理时间：${receipt.inspection.handleTime}`);
+      if (receipt.inspection.remark) {
+        lines.push(`质检备注：${receipt.inspection.remark}`);
+      }
+      lines.push('');
+    }
+    if (anomalyInfo.count > 0) {
+      lines.push('【温度异常处置】');
+      lines.push(`异常次数：${anomalyInfo.count} 次`);
+      lines.push(`待处理：${anomalyInfo.pending}  处理中：${anomalyInfo.inProgress}  已关闭：${anomalyInfo.closed}`);
+      lines.push('');
+    }
+    if (receipt.remark) {
+      lines.push('【备注】');
+      lines.push(receipt.remark);
+      lines.push('');
+    }
+    lines.push('─────────────────');
+    lines.push('冷链运输监控系统 生成');
+    return lines.join('\n');
+  }, [receipt, hasPermission, anomalyInfo]);
 
   if (!receipt) {
     return (

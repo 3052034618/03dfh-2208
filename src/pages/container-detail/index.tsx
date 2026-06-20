@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
-import { getContainerByNo, getAnomalySummary } from '@/data/containers';
+import { getContainerByNo, getAnomalySummary, detectAnomalies } from '@/data/containers';
 import type { Container } from '@/types/container';
 import TempGauge from '@/components/TempGauge';
 import StageTimeline from '@/components/StageTimeline';
@@ -39,6 +39,19 @@ const ContainerDetailPage: React.FC = () => {
     if (!container) return null;
     return getAnomalySummary(container);
   }, [container]);
+
+  const handlingStats = useMemo(() => {
+    if (!container) return null;
+    const anomalies = detectAnomalies(container);
+    const pending = anomalies.filter(a => !a.handling || a.handling.status === 'pending').length;
+    const inProgress = anomalies.filter(a => a.handling?.status === 'in_progress').length;
+    const closed = anomalies.filter(a => a.handling?.status === 'closed').length;
+    return { total: anomalies.length, pending, inProgress, closed };
+  }, [container]);
+
+  const handleViewAnomalyDetail = () => {
+    Taro.switchTab({ url: '/pages/temperature/index' });
+  };
 
   if (!container) {
       return (
@@ -100,26 +113,80 @@ const ContainerDetailPage: React.FC = () => {
       </View>
 
       {anomalySummary && (
-        <View className={styles.anomalySummaryCard}>
+        <View className={styles.anomalySummaryCard} onClick={handleViewAnomalyDetail}>
           {anomalySummary.count > 0 ? (
             <>
-              <View className={styles.anomalySummaryIcon}>
-                <Text>{anomalySummary.worstSeverity === 'danger' ? '🚨' : '⚠️'}</Text>
+              <View className={styles.anomalySummaryTop}>
+                <View className={styles.anomalySummaryIcon}>
+                  <Text>{anomalySummary.worstSeverity === 'danger' ? '🚨' : '⚠️'}</Text>
+                </View>
+                <View className={styles.anomalySummaryContent}>
+                  <Text className={styles.anomalySummaryTitle}>
+                    检测到 {anomalySummary.count} 次温度异常
+                  </Text>
+                  <Text className={styles.anomalySummaryDesc}>
+                    最严重 {anomalySummary.worstDirection === 'overheat' ? '偏高' : '偏低'}{anomalySummary.worstDeviation.toFixed(1)}℃
+                    （{anomalySummary.worstStage}，峰值 {anomalySummary.worstPeak}℃）
+                  </Text>
+                </View>
+                <View
+                  className={classnames(styles.anomalySummaryBadge, styles[anomalySummary.worstSeverity])}
+                >
+                  <Text>{anomalySummary.worstSeverity === 'danger' ? '超限' : '预警'}</Text>
+                </View>
               </View>
-              <View className={styles.anomalySummaryContent}>
-                <Text className={styles.anomalySummaryTitle}>
-                  检测到 {anomalySummary.count} 次温度异常
-                </Text>
-                <Text className={styles.anomalySummaryDesc}>
-                  最严重 {anomalySummary.worstDirection === 'overheat' ? '偏高' : '偏低'}{anomalySummary.worstDeviation.toFixed(1)}℃
-                  （{anomalySummary.worstStage}，峰值 {anomalySummary.worstPeak}℃）
-                </Text>
-              </View>
-              <View
-                className={classnames(styles.anomalySummaryBadge, styles[anomalySummary.worstSeverity])}
-              >
-                <Text>{anomalySummary.worstSeverity === 'danger' ? '超限' : '预警'}</Text>
-              </View>
+
+              {handlingStats && handlingStats.total > 0 && (
+                <View className={styles.handlingProgress}>
+                  <View className={styles.handlingProgressHeader}>
+                    <Text className={styles.handlingProgressTitle}>处置进度</Text>
+                    <Text className={styles.handlingProgressArrow}>查看详情 ›</Text>
+                  </View>
+                  <View className={styles.handlingProgressBar}>
+                    {handlingStats.pending > 0 && (
+                      <View
+                        className={styles.progressBarItem}
+                        style={{
+                          width: `${(handlingStats.pending / handlingStats.total) * 100}%`,
+                          background: '#F53F3F'
+                        }}
+                      />
+                    )}
+                    {handlingStats.inProgress > 0 && (
+                      <View
+                        className={styles.progressBarItem}
+                        style={{
+                          width: `${(handlingStats.inProgress / handlingStats.total) * 100}%`,
+                          background: '#FF7D00'
+                        }}
+                      />
+                    )}
+                    {handlingStats.closed > 0 && (
+                      <View
+                        className={styles.progressBarItem}
+                        style={{
+                          width: `${(handlingStats.closed / handlingStats.total) * 100}%`,
+                          background: '#00B42A'
+                        }}
+                      />
+                    )}
+                  </View>
+                  <View className={styles.handlingProgressLegend}>
+                    <View className={styles.legendItem}>
+                      <View className={styles.legendDot} style={{ background: '#F53F3F' }} />
+                      <Text>待处理 {handlingStats.pending}</Text>
+                    </View>
+                    <View className={styles.legendItem}>
+                      <View className={styles.legendDot} style={{ background: '#FF7D00' }} />
+                      <Text>处理中 {handlingStats.inProgress}</Text>
+                    </View>
+                    <View className={styles.legendItem}>
+                      <View className={styles.legendDot} style={{ background: '#00B42A' }} />
+                      <Text>已关闭 {handlingStats.closed}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
             </>
           ) : (
             <>
