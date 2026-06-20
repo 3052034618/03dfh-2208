@@ -1,0 +1,184 @@
+@use '@/styles/variables.scss' as *;
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stageItem {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.stageLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48rpx;
+  flex-shrink: 0;
+}
+
+.stageDot {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: $color-bg-hover;
+  border: 4rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 2;
+
+  &.completed {
+    border-color: transparent;
+  }
+
+  &.active {
+    border-color: transparent;
+    box-shadow: 0 0 0 8rpx rgba(14, 124, 134, 0.15);
+  }
+
+  &.selected {
+    transform: scale(1.15);
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  }
+}
+
+.checkIcon {
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.pulse {
+  position: absolute;
+  inset: -8rpx;
+  border-radius: 50%;
+  border: 3rpx solid currentColor;
+  animation: pulseRing 1.5s ease-out infinite;
+  opacity: 0;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.stageLine {
+  flex: 1;
+  width: 4rpx;
+  min-height: 80rpx;
+  background: $color-border;
+  margin: 4rpx 0;
+  flex-shrink: 0;
+
+  &.lineDone {
+    background: $color-primary;
+  }
+}
+
+.stageContent {
+  flex: 1;
+  padding: $spacing-md;
+  padding-top: 0;
+  margin-bottom: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.contentSelected {
+    border-color: $color-primary;
+    box-shadow: 0 4rpx 16rpx rgba(14, 124, 134, 0.15);
+    background: rgba(14, 124, 134, 0.02);
+  }
+}
+
+.stageHeader {
+  margin-bottom: $spacing-sm;
+}
+
+.stageNameWrap {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.stageColorTag {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  padding: 6rpx $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.stageDuration {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.stageLocation {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.locationLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.locationText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include text-ellipsis;
+  flex: 1;
+}
+
+.stageStats {
+  display: flex;
+  gap: $spacing-lg;
+  padding: $spacing-sm 0;
+  margin-bottom: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.statLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.statValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  font-family: 'DIN', monospace;
+}
+
+.stageTime {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.timeText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+
+  &.ongoing {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}

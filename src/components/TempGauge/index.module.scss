@@ -1,0 +1,116 @@
+@use '@/styles/variables.scss' as *;
+
+.gauge {
+  background: linear-gradient(135deg, rgba(14, 124, 134, 0.05) 0%, rgba(14, 124, 134, 0.12) 100%);
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &.sm {
+    padding: $spacing-lg;
+  }
+}
+
+.zoneLabel {
+  margin-bottom: $spacing-md;
+}
+
+.zoneText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  background: $color-bg-card;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+  border: 1rpx solid $color-border;
+}
+
+.tempDisplay {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: $spacing-sm;
+}
+
+.tempValue {
+  font-size: 96rpx;
+  font-weight: $font-weight-bold;
+  font-family: 'DIN', 'Arial', monospace;
+  line-height: 1;
+
+  .sm & {
+    font-size: 72rpx;
+  }
+}
+
+.tempUnit {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  margin-top: 8rpx;
+  margin-left: 4rpx;
+}
+
+.statusLabel {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-lg;
+}
+
+.statusDot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+}
+
+.statusText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.scale {
+  width: 100%;
+  margin-top: $spacing-sm;
+}
+
+.scaleTrack {
+  position: relative;
+  height: 16rpx;
+  background: linear-gradient(90deg, #f53f3f 0%, #ff7d00 30%, #00b42a 50%, #ff7d00 70%, #f53f3f 100%);
+  border-radius: $radius-round;
+  opacity: 0.3;
+  margin-bottom: $spacing-sm;
+}
+
+.safeZone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(0, 180, 42, 0.6);
+  opacity: 1;
+  z-index: 1;
+}
+
+.pointer {
+  position: absolute;
+  top: -8rpx;
+  width: 24rpx;
+  height: 32rpx;
+  background: $color-text-primary;
+  border: 4rpx solid $color-bg-card;
+  border-radius: $radius-sm;
+  transform: translateX(-50%);
+  z-index: 2;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.scaleLabels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.scaleLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  font-family: 'DIN', monospace;
+}

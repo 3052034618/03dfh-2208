@@ -1,0 +1,293 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  padding: $spacing-md $page-padding calc($spacing-xl * 2);
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(14, 124, 134, 0.1) 0%, $color-bg-page 20%);
+}
+
+.receipt {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  position: relative;
+}
+
+.receiptHeader {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $spacing-lg;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 32rpx;
+    height: 32rpx;
+    background: $color-bg-page;
+    border-radius: 50%;
+    bottom: -16rpx;
+  }
+  &::before { left: -16rpx; }
+  &::after { right: -16rpx; }
+}
+
+.headerLogo {
+  font-size: 48rpx;
+  margin-bottom: $spacing-sm;
+  opacity: 0.9;
+}
+
+.headerTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: $spacing-xs;
+  letter-spacing: 4rpx;
+}
+
+.headerSub {
+  font-size: $font-size-sm;
+  color: rgba(255,255,255,0.85);
+}
+
+.receiptId {
+  display: inline-block;
+  margin-top: $spacing-sm;
+  padding: 6rpx 20rpx;
+  background: rgba(255,255,255,0.2);
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-family: 'DIN', monospace;
+}
+
+.receiptBody {
+  padding: $spacing-xl $spacing-lg;
+  position: relative;
+}
+
+.statusBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xl;
+}
+
+.statusBanner.normal {
+  background: rgba(0, 180, 42, 0.08);
+  border: 2rpx solid rgba(0, 180, 42, 0.2);
+}
+
+.statusBanner.inspection {
+  background: rgba(255, 125, 0, 0.08);
+  border: 2rpx solid rgba(255, 125, 0, 0.2);
+}
+
+.statusLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.statusIcon {
+  font-size: 40rpx;
+}
+
+.statusText {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+
+  .normal & { color: $color-success; }
+  .inspection & { color: $color-warning; }
+}
+
+.statusTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.infoSection {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1rpx dashed $color-divider;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-weight: $font-weight-medium;
+}
+
+.labelIcon {
+  font-size: 28rpx;
+}
+
+.infoTable {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $spacing-md;
+}
+
+.rowLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+  min-width: 160rpx;
+}
+
+.rowValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  text-align: right;
+  flex: 1;
+  word-break: break-all;
+}
+
+.tempValue {
+  font-family: 'DIN', monospace;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-md;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-sm;
+
+  &.ok { background: rgba(0, 180, 42, 0.1); color: $color-success; }
+  &.bad { background: rgba(245, 63, 63, 0.1); color: $color-error; }
+}
+
+.sealValue {
+  font-family: 'DIN', monospace;
+  font-weight: $font-weight-semibold;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-sm;
+
+  &.ok { background: rgba(0, 180, 42, 0.1); color: $color-success; }
+  &.bad { background: rgba(245, 63, 63, 0.1); color: $color-error; }
+}
+
+.remarkBox {
+  background: $color-bg-page;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.8;
+  border-left: 6rpx solid $color-primary;
+}
+
+.divider {
+  height: 2rpx;
+  background-image: repeating-linear-gradient(
+    90deg,
+    $color-border 0,
+    $color-border 10rpx,
+    transparent 10rpx,
+    transparent 20rpx
+  );
+  margin: 0 $spacing-lg;
+}
+
+.signSection {
+  padding: $spacing-lg;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-lg;
+}
+
+.signItem {
+  text-align: center;
+}
+
+.signLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.signValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+  border-bottom: 2rpx solid $color-border;
+  padding-bottom: $spacing-xs;
+  display: inline-block;
+  min-width: 180rpx;
+}
+
+.actionBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-md $page-padding calc($spacing-md + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 100;
+}
+
+.shareBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  box-shadow: 0 4rpx 16rpx rgba(22, 93, 255, 0.3);
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+}
+
+.copyBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: $color-bg-hover;
+  border-radius: $radius-button;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &:active { opacity: 0.9; }
+}
+
+.dashDivider {
+  border-top: 2rpx dashed $color-border;
+  margin: $spacing-md 0;
+  position: relative;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: -18rpx;
+    width: 36rpx;
+    height: 36rpx;
+    background: $color-bg-page;
+    border-radius: 50%;
+  }
+  &::before { left: -52rpx; }
+  &::after { right: -52rpx; }
+}

@@ -1,0 +1,81 @@
+@use '@/styles/variables.scss' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+  background: $color-primary-bg;
+
+  &.sm {
+    padding: 4rpx 12rpx;
+    gap: 6rpx;
+  }
+}
+
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: $color-primary;
+}
+
+.text {
+  font-size: $font-size-sm;
+  color: $color-primary-dark;
+  font-weight: $font-weight-medium;
+  line-height: 1;
+
+  .sm & {
+    font-size: $font-size-xs;
+  }
+}
+
+.normal {
+  background: rgba(0, 180, 42, 0.1);
+  .dot { background: $color-success; }
+  .text { color: $color-success; }
+}
+
+.warn {
+  background: rgba(255, 125, 0, 0.1);
+  .dot { background: $color-warning; }
+  .text { color: $color-warning; }
+}
+
+.danger {
+  background: rgba(245, 63, 63, 0.1);
+  .dot { background: $color-error; }
+  .text { color: $color-error; }
+}
+
+.loading {
+  background: rgba(22, 93, 255, 0.1);
+  .dot { background: $color-stage-loading; }
+  .text { color: $color-stage-loading; }
+}
+
+.transit {
+  background: rgba(114, 46, 209, 0.1);
+  .dot { background: $color-stage-transit; }
+  .text { color: $color-stage-transit; }
+}
+
+.port {
+  background: rgba(255, 125, 0, 0.1);
+  .dot { background: $color-stage-port; }
+  .text { color: $color-stage-port; }
+}
+
+.delivery {
+  background: rgba(14, 124, 134, 0.1);
+  .dot { background: $color-primary; }
+  .text { color: $color-primary-dark; }
+}
+
+.arrived {
+  background: rgba(0, 180, 42, 0.1);
+  .dot { background: $color-stage-delivery; }
+  .text { color: $color-stage-delivery; }
+}

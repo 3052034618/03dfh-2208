@@ -1,0 +1,43 @@
+// ============================================
+// 主题配色变量 - 冷链物流专业风格
+// ============================================
+
+// 品牌主题色：深海蓝绿（冷链专业感）
+$color-primary: #0e7c86;
+$color-primary-light: #28a7b0;
+$color-primary-dark: #085b63;
+$color-primary-bg: rgba(14, 124, 134, 0.08);
+
+// 功能色
+$color-success: #00b42a;
+$color-warning: #ff7d00;
+$color-error: #f53f3f;
+$color-info: #165dff;
+
+// 温度专用色
+$color-temp-normal: #00b42a;
+$color-temp-warn: #ff7d00;
+$color-temp-danger: #f53f3f;
+
+// 运输阶段色
+$color-stage-loading: #165dff;
+$color-stage-transit: #722ed1;
+$color-stage-port: #ff7d00;
+$color-stage-delivery: #00b42a;
+
+// 背景色
+$color-bg-page: #f0fafb;
+$color-bg-card: #ffffff;
+$color-bg-hover: #f2f3f5;
+$color-bg-tag: rgba(14, 124, 134, 0.1);
+
+// 文本色
+$color-text-primary: #1d2129;
+$color-text-secondary: #4e5969;
+$color-text-tertiary: #86909c;
+$color-text-disabled: #c9cdd4;
+$color-text-white: #ffffff;
+
+// 边框色
+$color-border: #e5e6eb;
+$color-divider: #f2f3f5;
