@@ -24,16 +24,16 @@ const IndexPage: React.FC = () => {
 
   useEffect(() => {
     loadContainers();
-  }, []);
+  }, [profile.customerId]);
 
   const loadContainers = () => {
-    const data = getContainersByCustomer('CUST001');
+    const data = getContainersByCustomer(profile.customerId);
     setContainers(data);
     console.log('[IndexPage] loaded containers:', data.length);
   };
 
   const handleSearch = () => {
-    const results = searchContainers(keyword, 'CUST001');
+    const results = searchContainers(keyword, profile.customerId);
     setContainers(results);
     console.log('[IndexPage] search results:', keyword, results.length);
     if (keyword && results.length === 0) {
@@ -47,7 +47,7 @@ const IndexPage: React.FC = () => {
       if (res.result) {
         console.log('[IndexPage] scan result:', res.result);
         setKeyword(res.result);
-        const results = searchContainers(res.result, 'CUST001');
+        const results = searchContainers(res.result, profile.customerId);
         setContainers(results);
         if (results.length === 0) {
           Taro.showToast({ title: '未找到相关货柜', icon: 'none' });
@@ -82,14 +82,14 @@ const IndexPage: React.FC = () => {
   }, [containers, activeFilter]);
 
   const overviewStats = useMemo(() => {
-    const all = getContainersByCustomer('CUST001');
+    const all = getContainersByCustomer(profile.customerId);
     return {
       inTransit: all.filter(c => c.status === 'transit').length,
       port: all.filter(c => c.status === 'port').length,
       delivery: all.filter(c => c.status === 'delivery').length,
       warn: all.filter(c => c.tempStatus !== 'normal').length
     };
-  }, []);
+  }, [profile.customerId]);
 
   return (
     <ScrollView scrollY className={styles.page}>

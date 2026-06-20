@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Input, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { getContainersByCustomer } from '@/data/containers';
@@ -7,6 +7,7 @@ import TempChart from '@/components/TempChart';
 import TempGauge from '@/components/TempGauge';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDurationHours } from '@/utils/temperature';
+import { useUserStore } from '@/store/userStore';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 
@@ -18,11 +19,18 @@ const stageColorMap: Record<string, string> = {
 };
 
 const TemperaturePage: React.FC = () => {
-  const allContainers = getContainersByCustomer('CUST001');
-  const [selectedId, setSelectedId] = useState<string>(allContainers[0]?.id || '');
+  const { profile } = useUserStore();
+  const allContainers = useMemo(() => getContainersByCustomer(profile.customerId), [profile.customerId]);
+  const [selectedId, setSelectedId] = useState<string>('');
   const [selectedStage, setSelectedStage] = useState<number>(-1);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerKeyword, setPickerKeyword] = useState('');
+
+  useEffect(() => {
+    if (!selectedId && allContainers.length > 0) {
+      setSelectedId(allContainers[0].id);
+    }
+  }, [allContainers, selectedId]);
 
   const selectedContainer = useMemo<Container | undefined>(() => {
     return allContainers.find(c => c.id === selectedId);

@@ -1,96 +1,137 @@
-import type { ReceiptRecord } from '@/types/container';
+import type { ReceiptRecord, TempZone, UserRole } from '@/types/container';
+import { getContainerByNo, markContainerSigned, mockContainers } from './containers';
 import dayjs from 'dayjs';
 
 const now = dayjs();
 
-export const mockReceipts: ReceiptRecord[] = [
-  {
-    id: 'R001',
-    containerNo: 'MSKU5000411',
-    billNo: 'BL2024006003',
-    orderNo: 'ORD2024008803',
-    goodsName: '新西兰冷冻羔羊肉',
-    receiptTime: now.subtract(2, 'day').format('YYYY-MM-DD HH:mm:ss'),
-    receiptOperator: '张明远',
-    receiptRole: 'warehouse',
-    arrivalTemp: -15.2,
-    sealNo: 'SL800879',
-    sealIntact: true,
-    status: 'normal',
-    statusText: '正常收货',
-    remark: '货物包装完好，温度记录全程正常，已顺利入库B区03位。',
-    tempZone: { min: -18, max: -12, label: '冷冻区 -18℃~-12℃' },
-    inTempRange: true
-  },
-  {
-    id: 'R002',
-    containerNo: 'MSKU5000685',
-    billNo: 'BL2024006005',
-    orderNo: 'ORD2024008805',
-    goodsName: '美国进口生鲜龙虾',
-    receiptTime: now.subtract(5, 'day').format('YYYY-MM-DD HH:mm:ss'),
-    receiptOperator: '张明远',
-    receiptRole: 'warehouse',
-    arrivalTemp: 1.8,
-    sealNo: 'SL801465',
-    sealIntact: true,
-    status: 'inspection',
-    statusText: '需质检复查',
-    remark: '到货温度略微偏低（目标0-4℃），已送至质检区抽样检测，待出结果后决定入库或退货。',
-    tempZone: { min: 0, max: 4, label: '保鲜区 0℃~4℃' },
-    inTempRange: true
-  },
-  {
-    id: 'R003',
-    containerNo: 'MSKU5000137',
-    billNo: 'BL2024006001',
-    orderNo: 'ORD2024008801',
-    goodsName: '智利冷冻蓝莓',
-    receiptTime: now.subtract(8, 'day').format('YYYY-MM-DD HH:mm:ss'),
-    receiptOperator: '李明华',
-    receiptRole: 'warehouse',
-    arrivalTemp: -16.8,
-    sealNo: 'SL800293',
-    sealIntact: true,
-    status: 'normal',
-    statusText: '正常收货',
-    remark: '包装良好，温度全程稳定，已入冷库A区12位。随车文件齐全。',
-    tempZone: { min: -18, max: -12, label: '冷冻区 -18℃~-12℃' },
-    inTempRange: true
-  },
-  {
-    id: 'R004',
-    containerNo: 'MSKU5000822',
-    billNo: 'BL2024006006',
-    orderNo: 'ORD2024008806',
-    goodsName: '意大利进口新鲜车厘子',
-    receiptTime: now.subtract(12, 'day').format('YYYY-MM-DD HH:mm:ss'),
-    receiptOperator: '张明远',
-    receiptRole: 'warehouse',
-    arrivalTemp: 3.2,
-    sealNo: 'SL801758',
-    sealIntact: true,
-    status: 'normal',
-    statusText: '正常收货',
-    remark: '车厘子外观新鲜，温度2-8℃区间内保持良好，已入库C区01位，部分样品送品控检测糖度。',
-    tempZone: { min: 2, max: 8, label: '冷藏区 2℃~8℃' },
-    inTempRange: true
-  }
-];
+const buildMockReceipts = (): ReceiptRecord[] => {
+  const results: ReceiptRecord[] = [];
+  const preset = [
+    {
+      id: 'R001',
+      offsetDay: 2,
+      containerNo: 'MSKU5000411',
+      status: 'normal' as const,
+      operator: '张明远',
+      temp: -15.2,
+      remark: '货物包装完好，温度记录全程正常，已顺利入库B区03位。'
+    },
+    {
+      id: 'R002',
+      offsetDay: 5,
+      containerNo: 'MSKU5000685',
+      status: 'inspection' as const,
+      operator: '张明远',
+      temp: 1.8,
+      remark: '到货温度略微偏低（目标0-4℃），已送至质检区抽样检测，待出结果后决定入库或退货。'
+    },
+    {
+      id: 'R003',
+      offsetDay: 8,
+      containerNo: 'MSKU5000137',
+      status: 'normal' as const,
+      operator: '李明华',
+      temp: -16.8,
+      remark: '包装良好，温度全程稳定，已入冷库A区12位。随车文件齐全。'
+    },
+    {
+      id: 'R004',
+      offsetDay: 12,
+      containerNo: 'MSKU5000822',
+      status: 'normal' as const,
+      operator: '张明远',
+      temp: 3.2,
+      remark: '车厘子外观新鲜，温度2-8℃区间内保持良好，已入库C区01位，部分样品送品控检测糖度。'
+    }
+  ];
 
-export const getReceipts = (operatorId?: string) => {
-  if (!operatorId) return mockReceipts;
-  return mockReceipts.filter(r => r.receiptOperator === '张明远');
+  for (const p of preset) {
+    const container = mockContainers.find(c => c.containerNo === p.containerNo);
+    if (!container) continue;
+    const zone: TempZone = container.tempZone;
+    results.push({
+      id: p.id,
+      containerNo: p.containerNo,
+      billNo: container.billNo,
+      orderNo: container.orderNo,
+      goodsName: container.goodsName,
+      receiptTime: now.subtract(p.offsetDay, 'day').format('YYYY-MM-DD HH:mm:ss'),
+      receiptOperator: p.operator,
+      receiptRole: 'warehouse',
+      arrivalTemp: p.temp,
+      sealNo: container.sealNo,
+      sealIntact: true,
+      status: p.status,
+      statusText: p.status === 'normal' ? '正常收货' : '需质检复查',
+      remark: p.remark,
+      tempZone: zone,
+      inTempRange: p.temp >= zone.min && p.temp <= zone.max
+    });
+    markContainerSigned(p.containerNo);
+  }
+  return results;
+};
+
+export const mockReceipts: ReceiptRecord[] = buildMockReceipts();
+
+const findCustomerByContainerNo = (containerNo: string): string | undefined =>
+  mockContainers.find(c => c.containerNo === containerNo)?.customerId;
+
+export const getReceipts = (customerId?: string, operatorId?: string) => {
+  let list = mockReceipts;
+  if (customerId) {
+    list = list.filter(r => findCustomerByContainerNo(r.containerNo) === customerId);
+  }
+  if (operatorId) {
+    list = list.filter(r => r.receiptOperator === operatorId);
+  }
+  return list;
 };
 
 export const getReceiptById = (id: string) => mockReceipts.find(r => r.id === id);
 
-export const createReceipt = (data: Omit<ReceiptRecord, 'id' | 'receiptTime'>): ReceiptRecord => {
+export type CreateReceiptInput = {
+  containerNo: string;
+  receiptOperator: string;
+  receiptRole: UserRole;
+  arrivalTemp: number;
+  sealNo: string;
+  sealIntact: boolean;
+  status: 'normal' | 'inspection';
+  remark?: string;
+  customerId?: string;
+};
+
+export const createReceipt = (input: CreateReceiptInput): ReceiptRecord => {
+  const container = getContainerByNo(input.containerNo, input.customerId);
+  if (!container) {
+    throw new Error(`容器 ${input.containerNo} 不存在或不属于当前客户`);
+  }
+
+  const zone = container.tempZone;
+  const inTempRange = input.arrivalTemp >= zone.min && input.arrivalTemp <= zone.max;
+  const statusText = input.status === 'normal' ? '正常收货' : '需质检复查';
+
   const newReceipt: ReceiptRecord = {
-    ...data,
     id: `R${String(mockReceipts.length + 1).padStart(3, '0')}`,
-    receiptTime: now.format('YYYY-MM-DD HH:mm:ss')
+    containerNo: container.containerNo,
+    billNo: container.billNo,
+    orderNo: container.orderNo,
+    goodsName: container.goodsName,
+    receiptTime: now.format('YYYY-MM-DD HH:mm:ss'),
+    receiptOperator: input.receiptOperator,
+    receiptRole: input.receiptRole,
+    arrivalTemp: input.arrivalTemp,
+    sealNo: input.sealNo || container.sealNo,
+    sealIntact: input.sealIntact,
+    status: input.status,
+    statusText,
+    remark: input.remark?.trim() || '',
+    tempZone: zone,
+    inTempRange
   };
+
   mockReceipts.unshift(newReceipt);
+  markContainerSigned(container.containerNo);
   return newReceipt;
 };

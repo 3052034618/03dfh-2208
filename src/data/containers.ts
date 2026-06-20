@@ -51,83 +51,127 @@ const zones = [
   { min: 0, max: 4, label: '保鲜区 0℃~4℃' }
 ];
 
-const goodsList = [
-  { name: '智利冷冻蓝莓', type: 'food' as const },
-  { name: '进口胰岛素注射液', type: 'medicine' as const },
-  { name: '新西兰冷冻羔羊肉', type: 'food' as const },
-  { name: '德国进口婴幼儿配方奶粉', type: 'food' as const },
-  { name: '美国进口生鲜龙虾', type: 'food' as const },
-  { name: '意大利进口新鲜车厘子', type: 'food' as const },
-  { name: '生物试剂冷链运输', type: 'medicine' as const },
-  { name: '西班牙进口橄榄油', type: 'food' as const }
-];
+type CustomerSeed = { customerId: string; customerName: string; goods: { name: string; type: 'food' | 'medicine' }[]; };
 
-export const mockContainers: Container[] = Array.from({ length: 8 }, (_, i) => {
-  const zone = zones[i % zones.length];
-  const stageIdx = i < 3 ? 1 : (i < 5 ? 2 : (i < 7 ? 3 : 3));
-  const goods = goodsList[i];
-  const stages = createStages(zone.min, zone.max, stageIdx);
-  const lastStage = stages[stageIdx];
-  const currentTemp = lastStage.tempPoints[lastStage.tempPoints.length - 1]?.temperature ?? (zone.min + zone.max) / 2;
-  const tempStatus = getTempStatus(currentTemp, zone);
-
-  const statuses: Record<number, { key: Container['status'], text: string }> = {
-    0: { key: 'loading', text: '装货中' },
-    1: { key: 'transit', text: '运输中' },
-    2: { key: 'port', text: '港区等待' },
-    3: stageIdx === 3 ? (i >= 7 ? { key: 'arrived', text: '已到仓' } : { key: 'delivery', text: '送仓中' }) : { key: 'delivery', text: '送仓中' }
-  };
-
-  const statusInfo = statuses[stageIdx] ?? statuses[1];
-
-  return {
-    id: `C${1000 + i}`,
-    containerNo: `MSKU${5000000 + i * 137}`,
-    billNo: `BL${2024}${String(6000 + i).padStart(6, '0')}`,
-    orderNo: `ORD${2024}${String(8800 + i).padStart(6, '0')}`,
+const customerSeeds: CustomerSeed[] = [
+  {
     customerId: 'CUST001',
     customerName: '上海恒辉食品进口有限公司',
-    goodsName: goods.name,
-    goodsType: goods.type,
-    tempZone: zone,
-    currentTemp: Math.round(currentTemp * 10) / 10,
-    tempStatus,
-    status: statusInfo.key,
-    statusText: statusInfo.text,
-    currentLocation: lastStage.location,
-    destination: i % 2 === 0 ? '上海市浦东新区外高桥保税区恒辉一号仓' : '上海市青浦区华新镇医药冷链中心',
-    eta: now.add(i < 3 ? 5 + i * 2 : (i < 5 ? 2 : 0), 'day').format('YYYY-MM-DD HH:mm'),
-    departureTime: now.subtract(20 + i, 'day').format('YYYY-MM-DD'),
-    lastReportTime: now.subtract(i % 3, 'minute').format('YYYY-MM-DD HH:mm:ss'),
-    carrier: '马士基航运',
-    vesselName: ['MAERSK EMDEN', 'CMA CGM JACQUES', 'COSCO SHIPPING', 'MSC OSCAR'][i % 4],
-    voyageNo: `V${2024}${String(100 + i).padStart(4, '0')}`,
-    sealNo: `SL${String(800000 + i * 293).padStart(7, '0')}`,
-    stages,
-    totalDistance: 10500 + i * 200,
-    remainingDistance: Math.max(0, 10500 - i * 1500)
-  };
-});
+    goods: [
+      { name: '智利冷冻蓝莓', type: 'food' },
+      { name: '新西兰冷冻羔羊肉', type: 'food' },
+      { name: '美国进口生鲜龙虾', type: 'food' },
+      { name: '意大利进口新鲜车厘子', type: 'food' },
+      { name: '西班牙进口橄榄油', type: 'food' }
+    ]
+  },
+  {
+    customerId: 'CUST002',
+    customerName: '华东康和医药股份有限公司',
+    goods: [
+      { name: '进口胰岛素注射液', type: 'medicine' },
+      { name: '生物试剂冷链运输', type: 'medicine' }
+    ]
+  },
+  {
+    customerId: 'CUST003',
+    customerName: '鲜集仓全国连锁门店',
+    goods: [
+      { name: '德国进口婴幼儿配方奶粉', type: 'food' }
+    ]
+  }
+];
 
-export const getContainersByCustomer = (_customerId: string) => mockContainers;
+export const mockContainers: Container[] = (() => {
+  const list: Container[] = [];
+  let idx = 0;
+  for (const seed of customerSeeds) {
+    for (const goods of seed.goods) {
+      const zone = zones[idx % zones.length];
+      const stageIdx = idx < 3 ? 1 : (idx < 5 ? 2 : (idx < 7 ? 3 : 3));
+      const stages = createStages(zone.min, zone.max, stageIdx);
+      const lastStage = stages[stageIdx];
+      const currentTemp = lastStage.tempPoints[lastStage.tempPoints.length - 1]?.temperature ?? (zone.min + zone.max) / 2;
+      const tempStatus = getTempStatus(currentTemp, zone);
 
-export const getContainerByNo = (no: string): Container | undefined =>
-  mockContainers.find(c => c.containerNo === no || c.billNo === no || c.id === no);
+      const statuses: Record<number, { key: Container['status'], text: string }> = {
+        0: { key: 'loading', text: '装货中' },
+        1: { key: 'transit', text: '运输中' },
+        2: { key: 'port', text: '港区等待' },
+        3: stageIdx === 3 ? (idx >= 7 ? { key: 'arrived', text: '已到仓' } : { key: 'delivery', text: '送仓中' }) : { key: 'delivery', text: '送仓中' }
+      };
+      const statusInfo = statuses[stageIdx] ?? statuses[1];
+
+      list.push({
+        id: `C${1000 + idx}`,
+        containerNo: `MSKU${5000000 + idx * 137}`,
+        billNo: `BL${2024}${String(6000 + idx).padStart(6, '0')}`,
+        orderNo: `ORD${2024}${String(8800 + idx).padStart(6, '0')}`,
+        customerId: seed.customerId,
+        customerName: seed.customerName,
+        goodsName: goods.name,
+        goodsType: goods.type,
+        tempZone: zone,
+        currentTemp: Math.round(currentTemp * 10) / 10,
+        tempStatus,
+        status: statusInfo.key,
+        statusText: statusInfo.text,
+        currentLocation: lastStage.location,
+        destination: idx % 2 === 0 ? '上海市浦东新区外高桥保税区恒辉一号仓' : '上海市青浦区华新镇医药冷链中心',
+        eta: now.add(idx < 3 ? 5 + idx * 2 : (idx < 5 ? 2 : 0), 'day').format('YYYY-MM-DD HH:mm'),
+        departureTime: now.subtract(20 + idx, 'day').format('YYYY-MM-DD'),
+        lastReportTime: now.subtract(idx % 3, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+        carrier: '马士基航运',
+        vesselName: ['MAERSK EMDEN', 'CMA CGM JACQUES', 'COSCO SHIPPING', 'MSC OSCAR'][idx % 4],
+        voyageNo: `V${2024}${String(100 + idx).padStart(4, '0')}`,
+        sealNo: `SL${String(800000 + idx * 293).padStart(7, '0')}`,
+        stages,
+        totalDistance: 10500 + idx * 200,
+        remainingDistance: Math.max(0, 10500 - idx * 1500)
+      });
+      idx++;
+    }
+  }
+  return list;
+})();
+
+const signedContainerNos: Set<string> = new Set();
+
+export const markContainerSigned = (containerNo: string) => {
+  signedContainerNos.add(containerNo);
+  const c = mockContainers.find(x => x.containerNo === containerNo);
+  if (c) {
+    c.status = 'arrived';
+    c.statusText = '已到仓';
+  }
+};
+
+export const isContainerSigned = (containerNo: string) => signedContainerNos.has(containerNo);
+
+export const getContainersByCustomer = (customerId: string) =>
+  mockContainers.filter(c => c.customerId === customerId);
+
+export const getContainerByNo = (no: string, customerId?: string): Container | undefined =>
+  mockContainers.find(c =>
+    (c.containerNo === no || c.billNo === no || c.id === no) &&
+    (!customerId || c.customerId === customerId)
+  );
 
 export const searchContainers = (keyword: string, customerId: string): Container[] => {
-  if (!keyword.trim()) return getContainersByCustomer(customerId);
+  const base = mockContainers.filter(c => c.customerId === customerId);
+  if (!keyword.trim()) return base;
   const k = keyword.toUpperCase().trim();
-  return mockContainers.filter(c =>
-    c.customerId === customerId && (
-      c.containerNo.toUpperCase().includes(k) ||
-      c.billNo.toUpperCase().includes(k) ||
-      c.orderNo.toUpperCase().includes(k) ||
-      c.goodsName.includes(keyword)
-    )
+  return base.filter(c =>
+    c.containerNo.toUpperCase().includes(k) ||
+    c.billNo.toUpperCase().includes(k) ||
+    c.orderNo.toUpperCase().includes(k) ||
+    c.goodsName.includes(keyword)
   );
 };
 
 export const getPendingArrival = (customerId: string) =>
   mockContainers.filter(c =>
-    c.customerId === customerId && (c.status === 'delivery' || c.status === 'port')
+    c.customerId === customerId &&
+    !signedContainerNos.has(c.containerNo) &&
+    (c.status === 'delivery' || c.status === 'port')
   );

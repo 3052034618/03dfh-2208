@@ -1,4 +1,4 @@
-export default defineAppConfig({
+module.exports = {
   pages: [
     'pages/index/index',
     'pages/temperature/index',
@@ -38,4 +38,4 @@ export default defineAppConfig({
       }
     ]
   }
-})
+};

@@ -81,6 +81,7 @@ export interface ReceiptRecord {
 export interface UserProfile {
   id: string;
   name: string;
+  customerId: string;
   company: string;
   role: UserRole;
   roleText: string;

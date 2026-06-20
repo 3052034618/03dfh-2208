@@ -1,3 +1,3 @@
-export default definePageConfig({
+module.exports = {
   navigationBarTitleText: '温度曲线'
-})
+};

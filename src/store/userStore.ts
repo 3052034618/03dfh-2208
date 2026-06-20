@@ -12,6 +12,7 @@ export const useUserStore = create<UserState>((set) => ({
   profile: {
     id: 'U20240001',
     name: '张明远',
+    customerId: 'CUST001',
     company: '上海恒辉食品进口有限公司',
     role: 'warehouse',
     roleText: '仓库主管',

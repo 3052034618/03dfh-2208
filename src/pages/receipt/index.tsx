@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Input, ScrollView, Textarea } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { getPendingArrival } from '@/data/containers';
-import { getReceipts, createReceipt, mockReceipts } from '@/data/receipts';
+import { getReceipts, createReceipt } from '@/data/receipts';
 import ReceiptCard from '@/components/ReceiptCard';
 import { useUserStore } from '@/store/userStore';
 import type { Container } from '@/types/container';
@@ -12,6 +12,7 @@ import styles from './index.module.scss';
 const ReceiptPage: React.FC = () => {
   const { profile } = useUserStore();
   const [activeTab, setActiveTab] = useState<'pending' | 'form' | 'history'>('pending');
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const [containerNo, setContainerNo] = useState('');
   const [sealNo, setSealNo] = useState('');
@@ -20,10 +21,16 @@ const ReceiptPage: React.FC = () => {
   const [receiptType, setReceiptType] = useState<'normal' | 'inspection' | null>(null);
   const [remark, setRemark] = useState('');
 
-  const pendingList = useMemo(() => getPendingArrival('CUST001'), []);
-  const receiptHistory = useMemo(() => getReceipts(profile.id), [profile.id]);
+  const pendingList = useMemo(
+    () => getPendingArrival(profile.customerId),
+    [profile.customerId, refreshTick]
+  );
+  const receiptHistory = useMemo(
+    () => getReceipts(profile.customerId, profile.name),
+    [profile.customerId, profile.name, refreshTick]
+  );
 
-  const fillFromContainer = (c: Container) => {
+  const fillFromContainer = useCallback((c: Container) => {
     setContainerNo(c.containerNo);
     setSealNo(c.sealNo);
     setArrivalTemp(String(c.currentTemp));
@@ -32,7 +39,7 @@ const ReceiptPage: React.FC = () => {
     setRemark('');
     setActiveTab('form');
     console.log('[ReceiptPage] filled from container:', c.containerNo);
-  };
+  }, []);
 
   const handleSelectSeal = (val: boolean) => {
     setSealIntact(val);
@@ -65,32 +72,32 @@ const ReceiptPage: React.FC = () => {
       return;
     }
 
-    const zone = { min: -18, max: -12, label: '冷冻区' };
-    const newReceipt = createReceipt({
-      containerNo: containerNo.trim().toUpperCase(),
-      billNo: '-',
-      orderNo: '-',
-      goodsName: '-',
-      receiptOperator: profile.name,
-      receiptRole: profile.role,
-      arrivalTemp: temp,
-      sealNo: sealNo.trim().toUpperCase(),
-      sealIntact,
-      status: receiptType,
-      statusText: receiptType === 'normal' ? '正常收货' : '需质检复查',
-      remark: remark.trim(),
-      tempZone: zone,
-      inTempRange: temp >= zone.min && temp <= zone.max
-    });
+    try {
+      const newReceipt = createReceipt({
+        containerNo: containerNo.trim().toUpperCase(),
+        receiptOperator: profile.name,
+        receiptRole: profile.role,
+        arrivalTemp: temp,
+        sealNo: sealNo.trim().toUpperCase(),
+        sealIntact: sealIntact as boolean,
+        status: receiptType as 'normal' | 'inspection',
+        remark: remark.trim(),
+        customerId: profile.customerId
+      });
 
-    console.log('[ReceiptPage] submitted receipt:', newReceipt);
-    Taro.showToast({ title: '签收成功', icon: 'success' });
+      console.log('[ReceiptPage] submitted receipt:', newReceipt);
+      Taro.showToast({ title: '签收成功', icon: 'success' });
 
-    setTimeout(() => {
-      Taro.navigateTo({ url: `/pages/receipt-detail/index?id=${newReceipt.id}` });
-      handleReset();
-      setActiveTab('history');
-    }, 600);
+      setTimeout(() => {
+        setRefreshTick(t => t + 1);
+        handleReset();
+        setActiveTab('history');
+        Taro.navigateTo({ url: `/pages/receipt-detail/index?id=${newReceipt.id}` });
+      }, 500);
+    } catch (e: any) {
+      console.error('[ReceiptPage] submit error:', e);
+      Taro.showToast({ title: e?.message || '提交失败，箱子可能不属于当前客户', icon: 'none', duration: 2500 });
+    }
   };
 
   return (
@@ -112,7 +119,7 @@ const ReceiptPage: React.FC = () => {
           className={classnames(styles.tab, activeTab === 'history' && styles.active)}
           onClick={() => setActiveTab('history')}
         >
-          <Text>历史记录 ({mockReceipts.length})</Text>
+          <Text>历史记录 ({receiptHistory.length})</Text>
         </View>
       </View>
 
@@ -271,7 +278,7 @@ const ReceiptPage: React.FC = () => {
               />
             </View>
           </View>
-          <View style={{ height: '180rpx' }} />
+          <View style={{ height: 180 }} />
         </>
       )}
 
